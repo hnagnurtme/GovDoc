@@ -1,26 +1,26 @@
 # GovDoc Devops Setup
 
-Folder nay chua bo setup container day du cho:
+This folder contains a complete Docker setup for running GovDoc with:
 
-- Frontend (React + Vite build static qua Nginx)
-- Backend (FastAPI)
-- Vector DB (Qdrant)
-- Nginx Gateway (reverse proxy FE + API)
+- Frontend container
+- Backend container
+- Qdrant container
+- Nginx gateway container
 
-## Cau truc
+## Files
 
-- `docker-compose.yml`: chay toan bo stack
-- `Dockerfile.backend`: build image backend
-- `Dockerfile.frontend`: build image frontend
-- `nginx.frontend.conf`: cau hinh Nginx cho SPA
-- `nginx.gateway.conf`: reverse proxy
+- `docker-compose.yml`: full stack orchestration
+- `Dockerfile.backend`: backend image build
+- `Dockerfile.frontend`: frontend image build
+- `nginx.frontend.conf`: static frontend nginx config
+- `nginx.gateway.conf`: gateway reverse proxy config
 
-## Yeu cau truoc khi chay
+## Prerequisites
 
-1. Da cai Docker + Docker Compose plugin.
-2. Da tao file `Backend/.env` va dien API key.
+1. Docker and Docker Compose installed.
+2. A configured `Backend/.env` file with valid API keys.
 
-Gia tri quan trong trong `Backend/.env`:
+Minimum `Backend/.env` values:
 
 ```env
 OPENROUTER_API_KEY=...
@@ -30,62 +30,56 @@ GROQ_MODEL=llama-3.1-70b-versatile
 QDRANT_COLLECTION=law_chunks
 ```
 
-Luu y:
+Note:
+- In containers, backend uses `QDRANT_URL=http://qdrant:6333` from compose override.
 
-- Trong container, `QDRANT_URL` duoc compose override thanh `http://qdrant:6333`.
-- Khong dat `QDRANT_URL=http://127.0.0.1:6333` khi backend chay trong container.
-
-## Chay nhanh
+## Start the Stack
 
 ```bash
 cd Devops
 docker compose up -d --build
 ```
 
-## Luong request qua Nginx
+## Traffic Flow
 
-- Truy cap app: `http://localhost:3000` -> Nginx Gateway -> Frontend
-- Goi API: `http://localhost:3000/api/v1/...` -> Nginx Gateway -> Backend
+- App UI: `http://localhost:3000` -> Nginx gateway -> Frontend
+- API: `http://localhost:3000/api/v1/...` -> Nginx gateway -> Backend
 
-Luu y quan trong:
+Backend natively exposes `/api/v1` routes.
 
-- Backend da co prefix `/api/v1`.
-- Nginx forward nguyen duong dan `/api/v1/...` vao backend, khong rewrite.
-
-## Kiem tra trang thai
+## Useful Commands
 
 ```bash
+cd Devops
 docker compose ps
 docker compose logs -f nginx
 docker compose logs -f backend
 docker compose logs -f qdrant
 ```
 
-## Endpoint sau khi chay
+## Endpoints
 
-- Frontend (qua gateway): `http://localhost:3000`
-- Backend health (qua gateway): `http://localhost:3000/api/v1/health`
-- LLM credential check (qua gateway): `http://localhost:3000/api/v1/llm/credentials?provider=all`
-- Backend direct (debug): `http://localhost:8000/api/v1/health`
+- Frontend: `http://localhost:3000`
+- API health through gateway: `http://localhost:3000/api/v1/health`
+- LLM credential check through gateway: `http://localhost:3000/api/v1/llm/credentials?provider=all`
+- Backend direct health: `http://localhost:8000/api/v1/health`
 - Qdrant: `http://localhost:6333`
 
-## Dung va cleanup
-
-Dung stack:
+## Stop and Cleanup
 
 ```bash
 cd Devops
 docker compose down
 ```
 
-Dung va xoa ca volume Qdrant:
+Remove containers + volumes:
 
 ```bash
 cd Devops
 docker compose down -v
 ```
 
-## Rebuild khi code thay doi
+## Rebuild After Changes
 
 ```bash
 cd Devops
