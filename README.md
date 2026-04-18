@@ -1,10 +1,10 @@
 # GovDoc Intellisense
 
-Hệ thống Retrieval-Augmented Generation (RAG) cho pháp luật Việt Nam, xây dựng trên LangGraph, MariaDB Vector Store và OpenRouter/Grok API.
+Hệ thống Retrieval-Augmented Generation (RAG) cho pháp luật Việt Nam, xây dựng trên LangGraph, Qdrant Vector Store và OpenRouter/Groq API.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-purple.svg)](https://langchain-ai.github.io/langgraph)
-[![MariaDB](https://img.shields.io/badge/MariaDB-11.6+-teal.svg)](https://mariadb.com)
+[![Qdrant](https://img.shields.io/badge/Qdrant-1.13+-teal.svg)](https://qdrant.tech)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -14,8 +14,8 @@ Hệ thống Retrieval-Augmented Generation (RAG) cho pháp luật Việt Nam, x
 `GovDoc Intellisense` cho phép người dùng đặt câu hỏi về pháp luật Việt Nam và nhận câu trả lời có trích dẫn điều khoản cụ thể. Hệ thống sử dụng dataset [`kiil-lab/vietnamese-law-corpus`](https://huggingface.co/datasets/kiil-lab/vietnamese-law-corpus) làm nguồn tri thức chính.
 
 ```
-Người dùng hỏi → LangGraph query pipeline → Vector search MariaDB
-               → Rerank context → LLM (Grok qua OpenRouter) → Trả lời + trích dẫn luật
+Người dùng hỏi → LangGraph query pipeline → Vector search Qdrant
+               → Rerank context → LLM (Groq qua OpenRouter) → Trả lời + trích dẫn luật
 ```
 
 ---
@@ -33,7 +33,7 @@ Người dùng hỏi → LangGraph query pipeline → Vector search MariaDB
 │             │              └──────────────────────────┘  │
 └─────────────┼───────────────────────────────────────────┘
               ▼
-     MariaDB Vector Store
+    Qdrant Vector Store
      (HNSW index, cosine similarity)
               ▲
      Feature Engineering Pipeline
@@ -63,14 +63,14 @@ Backend/
 │   ├── splitter.py             # Tách theo Điều/Khoản/Điểm
 │   ├── enricher.py             # Thêm metadata pháp lý
 │   ├── embedder.py             # Vector hoá chunks
-│   └── ingest.py               # Nạp vào MariaDB
+│   └── ingest.py               # Nạp vào Qdrant
 │
 ├── app/                        # Backend chính (FastAPI + LangGraph)
 │   ├── main.py
 │   ├── graphs/                 # 2 subgraph LangGraph
 │   ├── nodes/                  # Các node xử lý
-│   ├── db/                     # Kết nối MariaDB
-│   ├── llm/                    # Router OpenRouter/Grok
+│   ├── db/                     # Kết nối Qdrant
+│   ├── llm/                    # Router OpenRouter/Groq
 │   └── utils/
 │
 └── tests/
@@ -84,7 +84,7 @@ Backend/
 | Thành phần | Phiên bản |
 |---|---|
 | Python | 3.11+ |
-| MariaDB | 11.6+ (với Vector plugin) |
+| Qdrant | 1.13+ |
 | Docker | 24+ (tuỳ chọn) |
 | RAM | 8GB+ (16GB khuyến nghị khi embed) |
 
@@ -112,15 +112,13 @@ Chỉnh sửa `.env`:
 ```env
 # LLM
 OPENROUTER_API_KEY=sk-or-...
-GROK_API_KEY=xai-...
+GROQ_API_KEY=gsk_...
 OPENROUTER_MODEL=x-ai/grok-3
 
-# Database
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=viet_law_rag
-DB_USER=raguser
-DB_PASSWORD=your_password
+# Vector DB
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_API_KEY=
+QDRANT_COLLECTION=law_chunks
 
 # HuggingFace
 HF_TOKEN=hf_...
@@ -131,13 +129,10 @@ EMBED_BATCH_SIZE=64
 EMBED_DIM=1024
 ```
 
-### 3. Khởi động MariaDB
+### 3. Khởi động Qdrant
 
 ```bash
-docker-compose up -d mariadb
-
-# Tạo schema
-make db-init
+docker compose -f Data/docker-compose.yml up -d
 ```
 
 ### 4. Chạy Feature Engineering pipeline
@@ -205,7 +200,6 @@ curl -X POST http://localhost:8000/import \
 
 ```bash
 make fe          # Chạy toàn bộ feature engineering pipeline
-make db-init     # Tạo schema MariaDB
 make serve       # Khởi động FastAPI server
 make test        # Chạy toàn bộ test suite
 make lint        # Ruff + mypy
@@ -218,7 +212,7 @@ make clean       # Xoá cache và processed data
 
 **Nguồn:** [`kiil-lab/vietnamese-law-corpus`](https://huggingface.co/datasets/kiil-lab/vietnamese-law-corpus)
 
-Sau Feature Engineering, mỗi chunk trong MariaDB có cấu trúc:
+Sau Feature Engineering, mỗi chunk lưu trong Qdrant có payload:
 
 | Field | Mô tả |
 |---|---|
@@ -239,10 +233,10 @@ Sau Feature Engineering, mỗi chunk trong MariaDB có cấu trúc:
 |---|---|
 | Orchestration | LangGraph 0.2+ |
 | API | FastAPI |
-| Vector DB | MariaDB 11.6 + Vector plugin (HNSW) |
+| Vector DB | Qdrant |
 | Embedding | `BAAI/bge-m3` (multilingual) |
-| LLM primary | Grok qua OpenRouter |
-| LLM fallback | Grok API trực tiếp |
+| LLM primary | Groq qua OpenRouter |
+| LLM fallback | Groq API trực tiếp |
 | Dataset | HuggingFace `datasets` |
 | Text processing | `underthesea`, `regex`, `unicodedata` |
 

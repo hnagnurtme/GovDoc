@@ -1,24 +1,13 @@
 services:
-  mariadb-ai-rag:
-    image: mariadb:11.6
-    container_name: mariadb-ai-rag
+  qdrant-ai-rag:
+    image: qdrant/qdrant:v1.17.1
+    container_name: qdrant-ai-rag
     restart: unless-stopped
     ports:
-      - "3306:3306"
-    environment:
-      MARIADB_ROOT_PASSWORD: rootpassword
-      MARIADB_DATABASE: viet_law_rag
-      MARIADB_USER: raguser
-      MARIADB_PASSWORD: ragpassword
-      TZ: Asia/Ho_Chi_Minh
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - mariadb_ai_rag_data:/var/lib/mysql
-      - ./init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-u", "root", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - qdrant_ai_rag_data:/qdrant/storage
 
 volumes:
-  mariadb_ai_rag_data:
+  qdrant_ai_rag_data:

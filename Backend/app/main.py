@@ -49,10 +49,10 @@ class ImportResponse(BaseModel):
 
 @app.get("/health")
 async def health() -> dict:
-    mariadb_status, chunks_indexed, db_error = check_connection()
+    qdrant_status, chunks_indexed, db_error = check_connection()
     payload = {
-        "status": "ok" if mariadb_status == "connected" else "degraded",
-        "mariadb": mariadb_status,
+        "status": "ok" if qdrant_status == "connected" else "degraded",
+        "qdrant": qdrant_status,
         "llm_router": "openrouter",
         "chunks_indexed": chunks_indexed,
     }
@@ -111,7 +111,7 @@ async def import_document(
         Path(tmp_path).unlink(missing_ok=True)
 
     if result.get("error"):
-        raise HTTPException(status_code=400, detail=result["error"])
+        logger.warning("import_store_warning", warning=result["error"])
 
     logger.info("import_completed", doc_id=result.get("doc_id"), chunks=result.get("chunks_created"))
     return ImportResponse(

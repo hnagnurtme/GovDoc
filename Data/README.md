@@ -1,11 +1,10 @@
-# Data Service: mariadb-ai-rag
+# Data Service: qdrant-ai-rag
 
-Muc tieu cua folder nay la chay MariaDB phuc vu RAG backend (GovDoc), bao gom khoi tao plugin vector cho truy van embedding.
+Muc tieu cua folder nay la chay Qdrant phuc vu vector search cho GovDoc backend.
 
 ## Cau truc
 
-- `docker-compose.yml`: service `mariadb-ai-rag`
-- `init/01-enable-vector.sql`: bat MariaDB Vector plugin (`ha_vector`)
+- `docker-compose.yml`: service `qdrant-ai-rag`
 
 ## Chay nhanh
 
@@ -18,29 +17,19 @@ Kiem tra service:
 
 ```bash
 docker compose ps
-docker compose logs -f mariadb-ai-rag
+docker compose logs -f qdrant-ai-rag
 ```
 
 ## Thong so mac dinh
 
-- Host: `localhost`
-- Port: `3306`
-- Database: `viet_law_rag`
-- User: `raguser`
-- Password: `ragpassword`
-- Root password: `rootpassword`
+- URL HTTP: `http://127.0.0.1:6333`
+- URL gRPC: `127.0.0.1:6334`
+- Collection (backend se tu tao): `law_chunks`
 
-## Kiem tra plugin vector
+Kiem tra health Qdrant:
 
 ```bash
-docker exec -it mariadb-ai-rag mariadb -uroot -prootpassword -e "SHOW PLUGINS LIKE 'ha_vector';"
-```
-
-Neu plugin duoc bat, ban co the init schema backend:
-
-```bash
-cd ../Backend
-mariadb -h 127.0.0.1 -P 3306 -uraguser -pragpassword viet_law_rag < app/db/schema.sql
+curl http://127.0.0.1:6333/healthz
 ```
 
 ## Ket noi voi Backend
@@ -48,11 +37,9 @@ mariadb -h 127.0.0.1 -P 3306 -uraguser -pragpassword viet_law_rag < app/db/schem
 Cap nhat `.env` trong Backend:
 
 ```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=viet_law_rag
-DB_USER=raguser
-DB_PASSWORD=ragpassword
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_API_KEY=
+QDRANT_COLLECTION=law_chunks
 ```
 
 Sau do chay backend:
@@ -62,9 +49,9 @@ cd ../Backend
 /Users/anhnon/my_virtualenvs/govdoc/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
-## Reset du lieu DB
+## Reset du lieu Qdrant
 
-Canh bao: lenh nay xoa toan bo data trong volume.
+Canh bao: lenh nay xoa toan bo data vector da index.
 
 ```bash
 cd Data

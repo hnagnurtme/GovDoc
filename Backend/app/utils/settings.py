@@ -8,14 +8,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     openrouter_api_key: str = Field(default="", alias="OPENROUTER_API_KEY")
-    grok_api_key: str = Field(default="", alias="GROK_API_KEY")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
+    groq_model: str = Field(default="llama-3.1-70b-versatile", alias="GROQ_MODEL")
     openrouter_model: str = Field(default="x-ai/grok-3", alias="OPENROUTER_MODEL")
 
-    db_host: str = Field(default="localhost", alias="DB_HOST")
-    db_port: int = Field(default=3306, alias="DB_PORT")
-    db_name: str = Field(default="viet_law_rag", alias="DB_NAME")
-    db_user: str = Field(default="raguser", alias="DB_USER")
-    db_password: str = Field(default="", alias="DB_PASSWORD")
+    qdrant_url: str = Field(default="http://127.0.0.1:6333", alias="QDRANT_URL")
+    qdrant_api_key: str = Field(default="", alias="QDRANT_API_KEY")
+    qdrant_collection: str = Field(default="law_chunks", alias="QDRANT_COLLECTION")
 
     embed_model: str = Field(default="BAAI/bge-m3", alias="EMBED_MODEL")
     embed_dim: int = Field(default=1024, alias="EMBED_DIM")

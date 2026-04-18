@@ -4,6 +4,7 @@ from app.llm import router
 
 
 @pytest.mark.asyncio
-async def test_grok_fallback_without_keys() -> None:
-    response = await router._call_grok_direct("test prompt")
+async def test_groq_fallback_without_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(router.settings, "groq_api_key", "")
+    response = await router._call_groq_direct("test prompt")
     assert "API key" in response

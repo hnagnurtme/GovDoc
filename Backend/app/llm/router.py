@@ -23,8 +23,8 @@ async def generate(prompt: str) -> str:
     try:
         return await _call_openrouter(prompt)
     except (RateLimitError, ServiceUnavailableError) as exc:
-        logger.warning("openrouter_failed", error=str(exc), fallback="grok_direct")
-        return await _call_grok_direct(prompt)
+        logger.warning("openrouter_failed", error=str(exc), fallback="groq_direct")
+        return await _call_groq_direct(prompt)
 
 
 async def _call_openrouter(prompt: str) -> str:
@@ -55,20 +55,20 @@ async def _call_openrouter(prompt: str) -> str:
     return data["choices"][0]["message"]["content"]
 
 
-async def _call_grok_direct(prompt: str) -> str:
-    if not settings.grok_api_key:
+async def _call_groq_direct(prompt: str) -> str:
+    if not settings.groq_api_key:
         return "He thong chua cau hinh LLM API key. Vui long cap nhat bien moi truong."
 
     payload = {
-        "model": "grok-3",
+        "model": settings.groq_model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.1,
     }
-    headers = {"Authorization": f"Bearer {settings.grok_api_key}"}
+    headers = {"Authorization": f"Bearer {settings.groq_api_key}"}
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(
-            "https://api.x.ai/v1/chat/completions",
+            "https://api.groq.com/openai/v1/chat/completions",
             json=payload,
             headers=headers,
         )

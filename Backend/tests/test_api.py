@@ -10,7 +10,7 @@ def test_health() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["status"] in {"ok", "degraded"}
-    assert data["mariadb"] in {"connected", "disconnected"}
+    assert data["qdrant"] in {"connected", "disconnected"}
     assert "chunks_indexed" in data
 
 

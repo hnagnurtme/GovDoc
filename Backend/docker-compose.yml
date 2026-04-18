@@ -1,16 +1,12 @@
 services:
-  mariadb:
-    image: mariadb:11.6
-    container_name: govdoc-mariadb
-    environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: viet_law_rag
-      MARIADB_USER: raguser
-      MARIADB_PASSWORD: ragpass
+  qdrant:
+    image: qdrant/qdrant:v1.17.1
+    container_name: govdoc-qdrant
     ports:
-      - "3306:3306"
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - qdrant_data:/qdrant/storage
 
 volumes:
-  mariadb_data:
+  qdrant_data:
