@@ -1,4 +1,4 @@
-import type { WorkspaceData } from '../types/workspace'
+import type { WorkspaceData } from '@/types/workspace'
 
 export const workspaceMockData: WorkspaceData = {
   workspaceName: 'Workspace',

@@ -1,7 +1,7 @@
-import { workspaceMockData } from '../mockdata/workspaceMockData'
-import type { Message, ReasoningLevel, WorkspaceData } from '../types/workspace'
-import { delay } from '../utils/async'
-import { makeId } from '../utils/id'
+import { workspaceMockData } from '@/mockdata/workspaceMockData'
+import type { Message, ReasoningLevel, WorkspaceData } from '@/types/workspace'
+import { delay } from '@/utils/async'
+import { makeId } from '@/utils/id'
 
 export async function fetchWorkspaceData(): Promise<WorkspaceData> {
   await delay(220)

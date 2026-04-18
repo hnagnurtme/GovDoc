@@ -1,5 +1,6 @@
 import type { KeyboardEvent, MutableRefObject } from 'react'
-import type { Message, ReasoningLevel } from '../../types/workspace'
+import type { Message, ReasoningLevel } from '@/types/workspace'
+import styles from '@/components/workspace/Workspace.module.css'
 
 type WorkspaceChatMainProps = {
   workspaceName: string
@@ -37,33 +38,36 @@ export function WorkspaceChatMain({
   onChangeReasoning,
 }: WorkspaceChatMainProps) {
   return (
-    <main className="ws-chat-main">
-      <header className="ws-chat-header">
+    <main className={styles.chatMain}>
+      <header className={styles.chatHeader}>
         <div>
           <h1>{workspaceName}</h1>
         </div>
-        <div className="ws-chat-header-actions">
+        <div className={styles.chatHeaderActions}>
           <select value={domain} onChange={(event) => onDomainChange(event.target.value)}>
             {domainOptions.map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>
-          <button type="button" className="ws-icon-btn" aria-label="Share">
+          <button type="button" className={styles.iconBtn} aria-label="Share">
             <span className="material-symbols-outlined">share</span>
           </button>
         </div>
       </header>
 
-      <div className="ws-chat-scroll">
+      <div className={styles.chatScroll}>
         {messages.map((message) => (
-          <article key={message.id} className={message.role === 'user' ? 'ws-msg ws-msg-user' : 'ws-msg ws-msg-ai'}>
-            <div className="ws-msg-avatar">
+          <article
+            key={message.id}
+            className={message.role === 'user' ? `${styles.msg} ${styles.msgUser}` : `${styles.msg} ${styles.msgAi}`}
+          >
+            <div className={styles.msgAvatar}>
               <span className="material-symbols-outlined">{message.role === 'user' ? 'person' : 'bolt'}</span>
             </div>
-            <div className="ws-msg-body">
+            <div className={styles.msgBody}>
               <p>{message.content}</p>
               {message.citations && message.citations.length > 0 && (
-                <div className="ws-citations">
+                <div className={styles.citations}>
                   {message.citations.map((citation) => (
                     <span key={citation}>{citation}</span>
                   ))}
@@ -75,16 +79,16 @@ export function WorkspaceChatMain({
         <div ref={messageEndRef} />
       </div>
 
-      <footer className="ws-composer-wrap">
-        <div className="ws-quick-prompts">
+      <footer className={styles.composerWrap}>
+        <div className={styles.quickPrompts}>
           {quickPrompts.map((prompt) => (
-            <button key={prompt} type="button" className="ws-prompt-chip" onClick={() => onUseQuickPrompt(prompt)}>
+            <button key={prompt} type="button" className={styles.promptChip} onClick={() => onUseQuickPrompt(prompt)}>
               {prompt}
             </button>
           ))}
         </div>
-        <div className="ws-composer">
-          <div className="ws-composer-icon">
+        <div className={styles.composer}>
+          <div className={styles.composerIcon}>
             <span className="material-symbols-outlined">search</span>
           </div>
           <input
@@ -94,32 +98,32 @@ export function WorkspaceChatMain({
             onKeyDown={onComposerKeyDown}
             placeholder="Ask about compliance, statutes, or risk factors..."
           />
-          <button type="button" className="ws-icon-btn" aria-label="Attach file">
+          <button type="button" className={styles.iconBtn} aria-label="Attach file">
             <span className="material-symbols-outlined">attach_file</span>
           </button>
-          <div className="ws-level-menu">
-            <button type="button" className="ws-icon-btn" aria-label="Reasoning level" onClick={onToggleReasoningMenu}>
+          <div className={styles.levelMenu}>
+            <button type="button" className={styles.iconBtn} aria-label="Reasoning level" onClick={onToggleReasoningMenu}>
               <span className="material-symbols-outlined">tune</span>
             </button>
             {showReasoningMenu && (
-              <div className="ws-reasoning-level" role="radiogroup" aria-label="Reasoning level">
+              <div className={styles.reasoningLevel} role="radiogroup" aria-label="Reasoning level">
                 <button
                   type="button"
-                  className={reasoningLevel === 'low' ? 'ws-level-btn ws-level-btn-active' : 'ws-level-btn'}
+                  className={reasoningLevel === 'low' ? `${styles.levelBtn} ${styles.levelBtnActive}` : styles.levelBtn}
                   onClick={() => onChangeReasoning('low')}
                 >
                   Low
                 </button>
                 <button
                   type="button"
-                  className={reasoningLevel === 'medium' ? 'ws-level-btn ws-level-btn-active' : 'ws-level-btn'}
+                  className={reasoningLevel === 'medium' ? `${styles.levelBtn} ${styles.levelBtnActive}` : styles.levelBtn}
                   onClick={() => onChangeReasoning('medium')}
                 >
                   Medium
                 </button>
                 <button
                   type="button"
-                  className={reasoningLevel === 'high' ? 'ws-level-btn ws-level-btn-active' : 'ws-level-btn'}
+                  className={reasoningLevel === 'high' ? `${styles.levelBtn} ${styles.levelBtnActive}` : styles.levelBtn}
                   onClick={() => onChangeReasoning('high')}
                 >
                   High
@@ -127,7 +131,7 @@ export function WorkspaceChatMain({
               </div>
             )}
           </div>
-          <div className="ws-enter-hint" aria-hidden="true" title="Press Enter to send">
+          <div className={styles.enterHint} aria-hidden="true" title="Press Enter to send">
             <span className="material-symbols-outlined">keyboard_return</span>
           </div>
         </div>

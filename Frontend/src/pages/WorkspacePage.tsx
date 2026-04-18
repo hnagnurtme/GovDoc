@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { WorkspaceChatMain } from '../components/workspace/WorkspaceChatMain'
-import { WorkspaceDocumentPanel } from '../components/workspace/WorkspaceDocumentPanel'
-import { WorkspaceSidebar } from '../components/workspace/WorkspaceSidebar'
-import { WorkspaceTopbar } from '../components/workspace/WorkspaceTopbar'
-import { useWorkspaceState } from '../hooks/useWorkspaceState'
+import { WorkspaceChatMain } from '@/components/workspace/WorkspaceChatMain'
+import { WorkspaceDocumentPanel } from '@/components/workspace/WorkspaceDocumentPanel'
+import { WorkspaceSidebar } from '@/components/workspace/WorkspaceSidebar'
+import { WorkspaceTopbar } from '@/components/workspace/WorkspaceTopbar'
+import { useWorkspaceState } from '@/hooks/useWorkspaceState'
 
 export function WorkspacePage() {
   const navigate = useNavigate()

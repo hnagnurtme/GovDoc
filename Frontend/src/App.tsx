@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import './App.css'
-import { HomePage } from './pages/HomePage'
-import { WorkspacePage } from './pages/WorkspacePage'
+import '@/App.css'
+import { HomePage } from '@/pages/HomePage'
+import { WorkspacePage } from '@/pages/WorkspacePage'
 
 function App() {
   return (

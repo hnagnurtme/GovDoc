@@ -1,4 +1,5 @@
-import type { ProcessStep } from '../../types/home'
+import type { ProcessStep } from '@/types/home'
+import styles from '@/components/home/Home.module.css'
 
 type HomeProcessProps = {
   processTitle: string
@@ -8,19 +9,19 @@ type HomeProcessProps = {
 
 export function HomeProcess({ processTitle, processSteps, sectionRef }: HomeProcessProps) {
   return (
-    <section className="hp-process" ref={sectionRef}>
-      <div className="hp-container">
-        <div className="hp-section-head-center">
-          <span className="hp-kicker">The Process</span>
+    <section className={styles.process} ref={sectionRef}>
+      <div className={styles.container}>
+        <div className={styles.sectionHeadCenter}>
+          <span className={styles.kicker}>The Process</span>
           <h2>{processTitle}</h2>
         </div>
-        <div className="hp-process-grid">
+        <div className={styles.processGrid}>
           {processSteps.map((step, index) => (
-            <article key={step.id} className="hp-step-card">
-              <div className="hp-step-icon">
+            <article key={step.id} className={styles.stepCard}>
+              <div className={styles.stepIcon}>
                 <span className="material-symbols-outlined">{step.icon}</span>
               </div>
-              <div className="hp-step-index">{String(index + 1).padStart(2, '0')}.</div>
+              <div className={styles.stepIndex}>{String(index + 1).padStart(2, '0')}.</div>
               <h3>{step.title}</h3>
               <p>{step.description}</p>
             </article>

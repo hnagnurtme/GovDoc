@@ -1,3 +1,5 @@
+import styles from '@/components/home/Home.module.css'
+
 type HomeFooterProps = {
   appName: string
   onGoWorkspace: () => void
@@ -6,62 +8,62 @@ type HomeFooterProps = {
 export function HomeFooter({ appName, onGoWorkspace }: HomeFooterProps) {
   return (
     <>
-      <section className="hp-cta-section">
-        <div className="hp-container">
-          <div className="hp-cta-panel">
-            <div className="hp-cta-pattern" />
-            <div className="hp-cta-content">
+      <section className={styles.ctaSection}>
+        <div className={styles.container}>
+          <div className={styles.ctaPanel}>
+            <div className={styles.ctaPattern} />
+            <div className={styles.ctaContent}>
               <h2>Ready to scale your legal research?</h2>
               <p>Join hundreds of firms using GovDoc Intellisense to turn documentation into actionable intelligence.</p>
-              <div className="hp-cta-actions">
-                <button type="button" className="hp-cta-white" onClick={onGoWorkspace}>
+              <div className={styles.ctaActions}>
+                <button type="button" className={styles.ctaWhite} onClick={onGoWorkspace}>
                   Open Free Workspace
                 </button>
-                <button type="button" className="hp-cta-outline">
+                <button type="button" className={styles.ctaOutline}>
                   Schedule Demo
                 </button>
               </div>
             </div>
-            <span className="material-symbols-outlined hp-shield" aria-hidden="true">
+            <span className={`material-symbols-outlined ${styles.shield}`} aria-hidden="true">
               shield
             </span>
           </div>
         </div>
       </section>
 
-      <footer className="hp-footer">
-        <div className="hp-container hp-footer-content">
-          <div className="hp-footer-brand">
-            <div className="hp-logo-wrap">
-              <div className="hp-logo-badge">
+      <footer className={styles.footer}>
+        <div className={`${styles.container} ${styles.footerContent}`}>
+          <div className={styles.footerBrand}>
+            <div className={styles.logoWrap}>
+              <div className={styles.logoBadge}>
                 <span className="material-symbols-outlined">gavel</span>
               </div>
-              <span className="hp-logo-text">{appName}</span>
+              <span className={styles.logoText}>{appName}</span>
             </div>
             <p>Empowering legal professionals with AI-driven document precision and cognitive insights.</p>
             <small>© 2024 GovDoc Intellisense. All Rights Reserved.</small>
           </div>
 
-          <div className="hp-footer-links-grid">
+          <div className={styles.footerLinksGrid}>
             <div>
-              <span className="hp-footer-title">Platform</span>
-              <button type="button" className="hp-footer-link" onClick={onGoWorkspace}>
+              <span className={styles.footerTitle}>Platform</span>
+              <button type="button" className={styles.footerLink} onClick={onGoWorkspace}>
                 Workspace
               </button>
-              <button type="button" className="hp-footer-link">API Access</button>
-              <button type="button" className="hp-footer-link">Security</button>
+              <button type="button" className={styles.footerLink}>API Access</button>
+              <button type="button" className={styles.footerLink}>Security</button>
             </div>
             <div>
-              <span className="hp-footer-title">Resources</span>
-              <button type="button" className="hp-footer-link">Legal Blog</button>
-              <button type="button" className="hp-footer-link">Case Studies</button>
-              <button type="button" className="hp-footer-link">Docs</button>
+              <span className={styles.footerTitle}>Resources</span>
+              <button type="button" className={styles.footerLink}>Legal Blog</button>
+              <button type="button" className={styles.footerLink}>Case Studies</button>
+              <button type="button" className={styles.footerLink}>Docs</button>
             </div>
             <div>
-              <span className="hp-footer-title">Company</span>
-              <button type="button" className="hp-footer-link">About Us</button>
-              <button type="button" className="hp-footer-link">Privacy</button>
-              <button type="button" className="hp-footer-link">Terms</button>
+              <span className={styles.footerTitle}>Company</span>
+              <button type="button" className={styles.footerLink}>About Us</button>
+              <button type="button" className={styles.footerLink}>Privacy</button>
+              <button type="button" className={styles.footerLink}>Terms</button>
             </div>
           </div>
         </div>

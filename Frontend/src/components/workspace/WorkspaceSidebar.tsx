@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
-import type { ChatFolder, ChatItem, UploadStatus } from '../../types/workspace'
+import type { ChatFolder, ChatItem, UploadStatus } from '@/types/workspace'
+import styles from '@/components/workspace/Workspace.module.css'
 
 type WorkspaceSidebarProps = {
   activeFolderId?: string
@@ -35,26 +36,26 @@ export function WorkspaceSidebar({
   chatTitlesById,
 }: WorkspaceSidebarProps) {
   return (
-    <aside className="ws-sidebar">
-      <button type="button" className="ws-new-chat" onClick={onNewChat}>
+    <aside className={styles.sidebar}>
+      <button type="button" className={styles.newChat} onClick={onNewChat}>
         <span className="material-symbols-outlined">add</span>
         New Chat
       </button>
 
-      <div className="ws-sidebar-upload">
-        <label className="ws-upload-box" htmlFor="pdf-file">
+      <div className={styles.sidebarUpload}>
+        <label className={styles.uploadBox} htmlFor="pdf-file">
           <input id="pdf-file" type="file" accept="application/pdf" onChange={onPickFile} />
           <strong>Upload PDF</strong>
           <small>Drag and drop PDF or click to select</small>
         </label>
 
-        <div className="ws-upload-fields">
+        <div className={styles.uploadFields}>
           <button type="button" className="btn btn-primary" onClick={onUpload}>
             Upload and analyze
           </button>
         </div>
 
-        <p className="ws-upload-status">
+        <p className={styles.uploadStatus}>
           {uploadStatus === 'idle' && 'Waiting for upload'}
           {uploadStatus === 'uploading' && 'Uploading and processing...'}
           {uploadStatus === 'success' && 'Upload completed successfully'}
@@ -62,28 +63,28 @@ export function WorkspaceSidebar({
         </p>
       </div>
 
-      <div className="ws-sidebar-section">
-        <p className="ws-section-title">Knowledge Base</p>
-        <ul className="ws-folder-list">
+      <div className={styles.sidebarSection}>
+        <p className={styles.sectionTitle}>Knowledge Base</p>
+        <ul className={styles.folderList}>
           {visibleFolders.map((folder) => {
             const isActiveFolder = activeFolderId === folder.id
             return (
               <li key={folder.id}>
                 <button
                   type="button"
-                  className={isActiveFolder ? 'ws-folder-row ws-folder-row-active' : 'ws-folder-row'}
+                  className={isActiveFolder ? `${styles.folderRow} ${styles.folderRowActive}` : styles.folderRow}
                   onClick={() => onToggleFolder(folder.id)}
                 >
                   <span className="material-symbols-outlined">folder</span>
                   <span>{folder.name}</span>
                 </button>
                 {expandedFolders[folder.id] && folder.chatIds.length > 0 && (
-                  <div className="ws-folder-chats">
+                  <div className={styles.folderChats}>
                     {folder.chatIds.map((chatId) => (
                       <button
                         key={chatId}
                         type="button"
-                        className={chatId === activeChatId ? 'ws-chat-link ws-chat-link-active' : 'ws-chat-link'}
+                        className={chatId === activeChatId ? `${styles.chatLink} ${styles.chatLinkActive}` : styles.chatLink}
                         onClick={() => onSelectChat(chatId)}
                       >
                         {chatTitlesById[chatId] ?? chatId}
@@ -97,21 +98,21 @@ export function WorkspaceSidebar({
         </ul>
       </div>
 
-      <div className="ws-sidebar-section ws-sidebar-grow">
-        <p className="ws-section-title">Recent Chats</p>
+      <div className={`${styles.sidebarSection} ${styles.sidebarGrow}`}>
+        <p className={styles.sectionTitle}>Recent Chats</p>
         <input
-          className="ws-search"
+          className={styles.search}
           type="search"
           placeholder="Search chat"
           value={historyFilter}
           onChange={(event) => onSearch(event.target.value)}
         />
-        <div className="ws-recent-list">
+        <div className={styles.recentList}>
           {visibleRecentChats.map((chat) => (
             <button
               key={chat.id}
               type="button"
-              className={chat.id === activeChatId ? 'ws-recent-item ws-recent-item-active' : 'ws-recent-item'}
+              className={chat.id === activeChatId ? `${styles.recentItem} ${styles.recentItemActive}` : styles.recentItem}
               onClick={() => onSelectChat(chat.id)}
             >
               <span>{chat.title}</span>

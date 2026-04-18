@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { fetchWorkspaceData, requestAssistantReply, simulateUploadDocument } from '../api/workspaceApi'
-import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus } from '../types/workspace'
-import { makeId } from '../utils/id'
-import { nowLabel } from '../utils/time'
+import { fetchWorkspaceData, requestAssistantReply, simulateUploadDocument } from '@/api/workspaceApi'
+import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus } from '@/types/workspace'
+import { makeId } from '@/utils/id'
+import { nowLabel } from '@/utils/time'
 
 const DEFAULT_EXPANDED: Record<string, boolean> = {
   labor: true,

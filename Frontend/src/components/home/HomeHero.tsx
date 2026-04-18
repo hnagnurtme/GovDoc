@@ -1,4 +1,5 @@
-import type { HomeData } from '../../types/home'
+import type { HomeData } from '@/types/home'
+import styles from '@/components/home/Home.module.css'
 
 type HomeHeroProps = {
   data: HomeData
@@ -7,32 +8,32 @@ type HomeHeroProps = {
 
 export function HomeHero({ data, onGoWorkspace }: HomeHeroProps) {
   return (
-    <section className="hp-hero hp-grid-pattern">
-      <div className="hp-hero-overlay" />
-      <div className="hp-hero-content">
-        <div className="hp-hero-copy">
-          <div className="hp-pill">
-            <span className="hp-pill-dot" />
+    <section className={`${styles.hero} ${styles.gridPattern}`}>
+      <div className={styles.heroOverlay} />
+      <div className={styles.heroContent}>
+        <div className={styles.heroCopy}>
+          <div className={styles.pill}>
+            <span className={styles.pillDot} />
             {data.heroTagline}
           </div>
           <h1>{data.heroTitle}</h1>
           <p>{data.heroDescription}</p>
-          <div className="hp-hero-actions">
-            <button type="button" className="hp-cta-primary" onClick={onGoWorkspace}>
+          <div className={styles.heroActions}>
+            <button type="button" className={styles.ctaPrimary} onClick={onGoWorkspace}>
               <span>Open Workspace</span>
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
-            <button type="button" className="hp-cta-secondary">
+            <button type="button" className={styles.ctaSecondary}>
               See demo
             </button>
           </div>
         </div>
-        <div className="hp-hero-media">
-          <div className="hp-hero-image-wrap">
+        <div className={styles.heroMedia}>
+          <div className={styles.heroImageWrap}>
             <img src={data.heroImage} alt="GovDoc Intellisense Workspace Preview" />
           </div>
-          <div className="hp-glow hp-glow-top" />
-          <div className="hp-glow hp-glow-bottom" />
+          <div className={`${styles.glow} ${styles.glowTop}`} />
+          <div className={`${styles.glow} ${styles.glowBottom}`} />
         </div>
       </div>
     </section>

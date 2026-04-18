@@ -1,4 +1,4 @@
-import type { HomeData } from '../types/home'
+import type { HomeData } from '@/types/home'
 
 export const homeMockData: HomeData = {
   appName: 'GovDoc Intellisense',

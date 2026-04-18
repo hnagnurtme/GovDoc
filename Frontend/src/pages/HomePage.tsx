@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchHomeData } from '../api/homeApi'
-import { HomeBenefits } from '../components/home/HomeBenefits'
-import { HomeFooter } from '../components/home/HomeFooter'
-import { HomeHeader } from '../components/home/HomeHeader'
-import { HomeHero } from '../components/home/HomeHero'
-import { HomeMobileNav } from '../components/home/HomeMobileNav'
-import { HomeProcess } from '../components/home/HomeProcess'
-import type { HomeData, HomeSectionKey } from '../types/home'
+import { fetchHomeData } from '@/api/homeApi'
+import { HomeBenefits } from '@/components/home/HomeBenefits'
+import { HomeFooter } from '@/components/home/HomeFooter'
+import { HomeHeader } from '@/components/home/HomeHeader'
+import { HomeHero } from '@/components/home/HomeHero'
+import { HomeMobileNav } from '@/components/home/HomeMobileNav'
+import { HomeProcess } from '@/components/home/HomeProcess'
+import styles from '@/components/home/Home.module.css'
+import type { HomeData, HomeSectionKey } from '@/types/home'
 
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null)
@@ -30,11 +31,11 @@ export function HomePage() {
   }
 
   if (!data) {
-    return <div className="page homepage" />
+    return <div className={`page ${styles.homepage}`} />
   }
 
   return (
-    <div className="page homepage">
+    <div className={`page ${styles.homepage}`}>
       <HomeHeader data={data} onGoWorkspace={goWorkspace} onScroll={scrollToSection} />
       <main>
         <HomeHero data={data} onGoWorkspace={goWorkspace} />
