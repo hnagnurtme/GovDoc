@@ -5,6 +5,7 @@ Folder nay chua bo setup container day du cho:
 - Frontend (React + Vite build static qua Nginx)
 - Backend (FastAPI)
 - Vector DB (Qdrant)
+- Nginx Gateway (reverse proxy FE + API)
 
 ## Cau truc
 
@@ -12,6 +13,7 @@ Folder nay chua bo setup container day du cho:
 - `Dockerfile.backend`: build image backend
 - `Dockerfile.frontend`: build image frontend
 - `nginx.frontend.conf`: cau hinh Nginx cho SPA
+- `nginx.gateway.conf`: reverse proxy
 
 ## Yeu cau truoc khi chay
 
@@ -40,19 +42,31 @@ cd Devops
 docker compose up -d --build
 ```
 
+## Luong request qua Nginx
+
+- Truy cap app: `http://localhost:3000` -> Nginx Gateway -> Frontend
+- Goi API: `http://localhost:3000/api/v1/...` -> Nginx Gateway -> Backend
+
+Luu y quan trong:
+
+- Backend da co prefix `/api/v1`.
+- Nginx forward nguyen duong dan `/api/v1/...` vao backend, khong rewrite.
+
 ## Kiem tra trang thai
 
 ```bash
 docker compose ps
+docker compose logs -f nginx
 docker compose logs -f backend
 docker compose logs -f qdrant
 ```
 
 ## Endpoint sau khi chay
 
-- Frontend: `http://localhost:3000`
-- Backend health: `http://localhost:8000/health`
-- LLM credential check: `http://localhost:8000/llm/credentials?provider=all`
+- Frontend (qua gateway): `http://localhost:3000`
+- Backend health (qua gateway): `http://localhost:3000/api/v1/health`
+- LLM credential check (qua gateway): `http://localhost:3000/api/v1/llm/credentials?provider=all`
+- Backend direct (debug): `http://localhost:8000/api/v1/health`
 - Qdrant: `http://localhost:6333`
 
 ## Dung va cleanup
