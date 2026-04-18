@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from app.db.connection import check_connection
 from app.graphs.import_graph import build_import_graph
 from app.graphs.query_graph import build_query_graph
 from app.utils.logger import get_logger
@@ -48,12 +49,16 @@ class ImportResponse(BaseModel):
 
 @app.get("/health")
 async def health() -> dict:
-    return {
-        "status": "ok",
-        "mariadb": "unknown",
+    mariadb_status, chunks_indexed, db_error = check_connection()
+    payload = {
+        "status": "ok" if mariadb_status == "connected" else "degraded",
+        "mariadb": mariadb_status,
         "llm_router": "openrouter",
-        "chunks_indexed": 0,
+        "chunks_indexed": chunks_indexed,
     }
+    if db_error:
+        payload["db_error"] = db_error
+    return payload
 
 
 @app.post("/query", response_model=QueryResponse)
