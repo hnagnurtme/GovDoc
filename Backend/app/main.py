@@ -16,6 +16,7 @@ from app.utils.validators import validate_doc_type
 
 logger = get_logger(__name__)
 app = FastAPI(title="GovDoc Intellisense Backend", version="0.1.0")
+API_PREFIX = "/api/v1"
 
 import_graph = build_import_graph()
 query_graph = build_query_graph()
@@ -60,7 +61,7 @@ class CredentialCheckResponse(BaseModel):
     groq: CredentialCheckResult | None = None
 
 
-@app.get("/health")
+@app.get(f"{API_PREFIX}/health")
 async def health() -> dict:
     qdrant_status, chunks_indexed, db_error = check_connection()
     payload = {
@@ -74,7 +75,7 @@ async def health() -> dict:
     return payload
 
 
-@app.get("/llm/credentials", response_model=CredentialCheckResponse)
+@app.get(f"{API_PREFIX}/llm/credentials", response_model=CredentialCheckResponse)
 async def llm_credentials(provider: str = "all") -> CredentialCheckResponse:
     provider = provider.lower().strip()
     if provider not in {"all", "openrouter", "groq"}:
@@ -90,7 +91,7 @@ async def llm_credentials(provider: str = "all") -> CredentialCheckResponse:
     return CredentialCheckResponse(openrouter=openrouter_result, groq=groq_result)
 
 
-@app.post("/query", response_model=QueryResponse)
+@app.post(f"{API_PREFIX}/query", response_model=QueryResponse)
 async def query(payload: QueryRequest) -> QueryResponse:
     t0 = time.perf_counter()
     result = await query_graph.ainvoke(
@@ -114,7 +115,7 @@ async def query(payload: QueryRequest) -> QueryResponse:
     )
 
 
-@app.post("/import", response_model=ImportResponse)
+@app.post(f"{API_PREFIX}/import", response_model=ImportResponse)
 async def import_document(
     file: UploadFile = File(...),
     doc_type: str = Form("luat"),
