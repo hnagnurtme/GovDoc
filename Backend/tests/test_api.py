@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import app, settings
 
 client = TestClient(app)
 
@@ -35,3 +35,39 @@ def test_import() -> None:
     body = response.json()
     assert body["status"] == "success"
     assert body["chunks_created"] >= 1
+
+
+def test_cloudinary_upload_requires_pdf() -> None:
+    files = {"file": ("notes.txt", b"not-a-pdf", "text/plain")}
+    response = client.post("/api/v1/cloudinary/upload", files=files)
+    assert response.status_code == 400
+
+
+def test_cloudinary_upload_requires_pdf_mime() -> None:
+    files = {"file": ("law.pdf", b"%PDF-1.4\n%%EOF", "application/octet-stream")}
+    response = client.post("/api/v1/cloudinary/upload", files=files)
+    assert response.status_code == 415
+
+
+def test_cloudinary_upload_rejects_path_traversal_filename() -> None:
+    files = {"file": ("../law.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")}
+    response = client.post("/api/v1/cloudinary/upload", files=files)
+    assert response.status_code == 400
+
+
+def test_cloudinary_upload_rejects_invalid_signature() -> None:
+    files = {"file": ("law.pdf", b"not-pdf-content", "application/pdf")}
+    response = client.post("/api/v1/cloudinary/upload", files=files)
+    assert response.status_code == 400
+
+
+def test_cloudinary_upload_respects_size_limit() -> None:
+    old_size = settings.upload_max_file_size_mb
+    settings.upload_max_file_size_mb = 1
+    try:
+        payload = b"%PDF-1.7\n" + (b"x" * (1024 * 1024 + 1)) + b"\n%%EOF"
+        files = {"file": ("law.pdf", payload, "application/pdf")}
+        response = client.post("/api/v1/cloudinary/upload", files=files)
+        assert response.status_code == 413
+    finally:
+        settings.upload_max_file_size_mb = old_size

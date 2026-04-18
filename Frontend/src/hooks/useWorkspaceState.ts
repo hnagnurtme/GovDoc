@@ -31,6 +31,7 @@ export function useWorkspaceState() {
   const [fileName, setFileName] = useState('No file uploaded')
   const [filePages, setFilePages] = useState<number | null>(null)
   const [fileUrl, setFileUrl] = useState('')
+  const [previewImageUrl, setPreviewImageUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
   const messageEndRef = useRef<HTMLDivElement | null>(null)
@@ -154,6 +155,7 @@ export function useWorkspaceState() {
       setUploadStatus('success')
       setFilePages(result.pages)
       setFileUrl(result.secureUrl)
+      setPreviewImageUrl(result.previewImageUrl ?? '')
       if (result.originalFilename) {
         setDocumentTitle(result.originalFilename)
       }
@@ -173,6 +175,7 @@ export function useWorkspaceState() {
       setFileName(file.name)
       setFilePages(null)
       setFileUrl('')
+      setPreviewImageUrl('')
       setUploadStatus('idle')
     },
     [],
@@ -210,6 +213,7 @@ export function useWorkspaceState() {
     fileName,
     filePages,
     fileUrl,
+    previewImageUrl,
     onPickFile,
     triggerUpload,
     startNewChat,

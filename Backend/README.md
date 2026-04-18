@@ -70,6 +70,19 @@ Form fields:
 - `doc_type` (optional, default `luat`)
 - `legal_domain` (optional)
 
+### POST `/api/v1/cloudinary/upload`
+Securely uploads a PDF to Cloudinary using backend-side signature.
+
+Form fields:
+- `file` (required, PDF)
+
+Response includes:
+- `secure_url`
+- `pages`
+- `original_filename`
+- `public_id`
+- `preview_image_url` (first-page image for fast preview)
+
 ## Environment Variables
 
 | Variable | Required | Description |
@@ -83,6 +96,10 @@ Form fields:
 | `QDRANT_COLLECTION` | No | Default: `law_chunks` |
 | `EMBED_MODEL` | No | Default: `BAAI/bge-m3` |
 | `EMBED_DIM` | No | Default: `1024` |
+| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret (backend only) |
+| `UPLOAD_MAX_FILE_SIZE_MB` | No | Default: `15` |
 | `LOG_LEVEL` | No | Default: `INFO` |
 
 ## Run Locally

@@ -5,10 +5,18 @@ type WorkspaceDocumentPanelProps = {
   fileName: string
   filePages: number | null
   fileUrl: string
+  previewImageUrl: string
   uploadTimeText: string
 }
 
-export function WorkspaceDocumentPanel({ documentTitle, fileName, filePages, fileUrl, uploadTimeText }: WorkspaceDocumentPanelProps) {
+export function WorkspaceDocumentPanel({
+  documentTitle,
+  fileName,
+  filePages,
+  fileUrl,
+  previewImageUrl,
+  uploadTimeText,
+}: WorkspaceDocumentPanelProps) {
   return (
     <aside className={styles.docPanel}>
       <div className={styles.docTopbar}>
@@ -28,7 +36,16 @@ export function WorkspaceDocumentPanel({ documentTitle, fileName, filePages, fil
       </div>
 
       <div className={styles.docPreviewWrap}>
-        {fileUrl ? (
+        {previewImageUrl ? (
+          <div className={styles.previewImageWrap}>
+            <img className={styles.previewImage} src={previewImageUrl} alt="First page preview" />
+            {fileUrl && (
+              <a className={styles.previewLink} href={fileUrl} target="_blank" rel="noreferrer">
+                Open full PDF
+              </a>
+            )}
+          </div>
+        ) : fileUrl ? (
           <iframe
             className={styles.pdfFrame}
             src={`${fileUrl}#view=FitH`}

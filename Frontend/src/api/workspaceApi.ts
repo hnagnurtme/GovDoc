@@ -25,6 +25,7 @@ type CloudinaryUploadResponse = {
   pages?: number
   original_filename?: string
   public_id?: string
+  preview_image_url?: string
 }
 
 export type UploadedPdf = {
@@ -32,35 +33,15 @@ export type UploadedPdf = {
   pages: number | null
   originalFilename: string | null
   publicId: string | null
-}
-
-async function sha1Hex(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(input))
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('')
+  previewImageUrl: string | null
 }
 
 export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-  const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY
-  const apiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET
-
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error('Cloudinary is not configured. Please set VITE_CLOUDINARY_CLOUD_NAME, VITE_CLOUDINARY_API_KEY, VITE_CLOUDINARY_API_SECRET in .env')
-  }
-
-  const timestamp = Math.floor(Date.now() / 1000)
-  const signatureBase = `timestamp=${timestamp}${apiSecret}`
-  const signature = await sha1Hex(signatureBase)
-
+  const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('api_key', apiKey)
-  formData.append('timestamp', String(timestamp))
-  formData.append('signature', signature)
 
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+  const response = await fetch(`${backendApiBase}/cloudinary/upload`, {
     method: 'POST',
     body: formData,
   })
@@ -76,5 +57,6 @@ export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
     pages: data.pages ?? null,
     originalFilename: data.original_filename ?? null,
     publicId: data.public_id ?? null,
+    previewImageUrl: data.preview_image_url ?? null,
   }
 }

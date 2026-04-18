@@ -70,6 +70,7 @@ export function WorkspacePage() {
           fileName={state.fileName}
           filePages={state.filePages}
           fileUrl={state.fileUrl}
+          previewImageUrl={state.previewImageUrl}
           uploadTimeText={uploadTimeText}
         />
       </div>

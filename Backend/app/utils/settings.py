@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     embed_model: str = Field(default="BAAI/bge-m3", alias="EMBED_MODEL")
     embed_dim: int = Field(default=1024, alias="EMBED_DIM")
 
+    cloudinary_cloud_name: str = Field(default="", alias="CLOUDINARY_CLOUD_NAME")
+    cloudinary_api_key: str = Field(default="", alias="CLOUDINARY_API_KEY")
+    cloudinary_api_secret: str = Field(default="", alias="CLOUDINARY_API_SECRET")
+    upload_max_file_size_mb: int = Field(default=15, alias="UPLOAD_MAX_FILE_SIZE_MB")
+
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
 
