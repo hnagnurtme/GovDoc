@@ -76,3 +76,41 @@ async def _call_groq_direct(prompt: str) -> str:
 
     data = response.json()
     return data["choices"][0]["message"]["content"]
+
+
+async def check_openrouter_credential() -> dict:
+    if not settings.openrouter_api_key:
+        return {"provider": "openrouter", "ok": False, "status_code": 0, "detail": "missing api key"}
+
+    headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get("https://openrouter.ai/api/v1/models", headers=headers)
+        ok = response.status_code == 200
+        return {
+            "provider": "openrouter",
+            "ok": ok,
+            "status_code": response.status_code,
+            "detail": "valid" if ok else response.text[:300],
+        }
+    except Exception as exc:
+        return {"provider": "openrouter", "ok": False, "status_code": 0, "detail": str(exc)}
+
+
+async def check_groq_credential() -> dict:
+    if not settings.groq_api_key:
+        return {"provider": "groq", "ok": False, "status_code": 0, "detail": "missing api key"}
+
+    headers = {"Authorization": f"Bearer {settings.groq_api_key}"}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get("https://api.groq.com/openai/v1/models", headers=headers)
+        ok = response.status_code == 200
+        return {
+            "provider": "groq",
+            "ok": ok,
+            "status_code": response.status_code,
+            "detail": "valid" if ok else response.text[:300],
+        }
+    except Exception as exc:
+        return {"provider": "groq", "ok": False, "status_code": 0, "detail": str(exc)}

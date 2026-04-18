@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from app.db.connection import check_connection
 from app.graphs.import_graph import build_import_graph
 from app.graphs.query_graph import build_query_graph
+from app.llm import router
 from app.utils.logger import get_logger
 from app.utils.validators import validate_doc_type
 
@@ -47,6 +48,18 @@ class ImportResponse(BaseModel):
     status: str
 
 
+class CredentialCheckResult(BaseModel):
+    provider: str
+    ok: bool
+    status_code: int
+    detail: str
+
+
+class CredentialCheckResponse(BaseModel):
+    openrouter: CredentialCheckResult | None = None
+    groq: CredentialCheckResult | None = None
+
+
 @app.get("/health")
 async def health() -> dict:
     qdrant_status, chunks_indexed, db_error = check_connection()
@@ -59,6 +72,22 @@ async def health() -> dict:
     if db_error:
         payload["db_error"] = db_error
     return payload
+
+
+@app.get("/llm/credentials", response_model=CredentialCheckResponse)
+async def llm_credentials(provider: str = "all") -> CredentialCheckResponse:
+    provider = provider.lower().strip()
+    if provider not in {"all", "openrouter", "groq"}:
+        raise HTTPException(status_code=400, detail="provider must be one of: all, openrouter, groq")
+
+    openrouter_result = None
+    groq_result = None
+    if provider in {"all", "openrouter"}:
+        openrouter_result = CredentialCheckResult(**(await router.check_openrouter_credential()))
+    if provider in {"all", "groq"}:
+        groq_result = CredentialCheckResult(**(await router.check_groq_credential()))
+
+    return CredentialCheckResponse(openrouter=openrouter_result, groq=groq_result)
 
 
 @app.post("/query", response_model=QueryResponse)
