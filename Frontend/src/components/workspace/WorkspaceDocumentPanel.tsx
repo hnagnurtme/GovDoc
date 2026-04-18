@@ -4,10 +4,11 @@ type WorkspaceDocumentPanelProps = {
   documentTitle: string
   fileName: string
   filePages: number | null
+  fileUrl: string
   uploadTimeText: string
 }
 
-export function WorkspaceDocumentPanel({ documentTitle, fileName, filePages, uploadTimeText }: WorkspaceDocumentPanelProps) {
+export function WorkspaceDocumentPanel({ documentTitle, fileName, filePages, fileUrl, uploadTimeText }: WorkspaceDocumentPanelProps) {
   return (
     <aside className={styles.docPanel}>
       <div className={styles.docTopbar}>
@@ -27,20 +28,28 @@ export function WorkspaceDocumentPanel({ documentTitle, fileName, filePages, upl
       </div>
 
       <div className={styles.docPreviewWrap}>
-        <div className={styles.docPreview}>
-          <div className={styles.docStrip} />
-          <h3>Official Document</h3>
-          <p>STATE DEPARTMENT OF MUNICIPAL AFFAIRS</p>
-          <div className={styles.docLines}>
-            <div />
-            <div />
-            <div />
-            <div className={styles.docHighlight} />
-            <div />
-            <div />
-            <div className={styles.docSeal}>Seal of Authenticity</div>
+        {fileUrl ? (
+          <iframe
+            className={styles.pdfFrame}
+            src={`${fileUrl}#view=FitH`}
+            title="PDF Preview"
+          />
+        ) : (
+          <div className={styles.docPreview}>
+            <div className={styles.docStrip} />
+            <h3>Official Document</h3>
+            <p>Upload a PDF to preview it here</p>
+            <div className={styles.docLines}>
+              <div />
+              <div />
+              <div />
+              <div className={styles.docHighlight} />
+              <div />
+              <div />
+              <div className={styles.docSeal}>Awaiting Upload</div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className={styles.metadata}>

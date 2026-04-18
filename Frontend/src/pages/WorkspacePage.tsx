@@ -4,6 +4,7 @@ import { WorkspaceChatMain } from '@/components/workspace/WorkspaceChatMain'
 import { WorkspaceDocumentPanel } from '@/components/workspace/WorkspaceDocumentPanel'
 import { WorkspaceSidebar } from '@/components/workspace/WorkspaceSidebar'
 import { WorkspaceTopbar } from '@/components/workspace/WorkspaceTopbar'
+import styles from '@/components/workspace/Workspace.module.css'
 import { useWorkspaceState } from '@/hooks/useWorkspaceState'
 
 export function WorkspacePage() {
@@ -21,14 +22,14 @@ export function WorkspacePage() {
   )
 
   if (state.isLoading) {
-    return <div className="page ws-shell" />
+    return <div className={`page ${styles.shell}`} />
   }
 
   return (
-    <div className="page ws-shell">
+    <div className={`page ${styles.shell}`}>
       <WorkspaceTopbar onGoHome={() => navigate('/')} />
 
-      <div className="ws-layout">
+      <div className={styles.layout}>
         <WorkspaceSidebar
           activeFolderId={state.activeChat?.folderId}
           visibleFolders={state.visibleFolders}
@@ -68,6 +69,7 @@ export function WorkspacePage() {
           documentTitle={state.documentTitle}
           fileName={state.fileName}
           filePages={state.filePages}
+          fileUrl={state.fileUrl}
           uploadTimeText={uploadTimeText}
         />
       </div>

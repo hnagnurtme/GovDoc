@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { fetchWorkspaceData, requestAssistantReply, simulateUploadDocument } from '@/api/workspaceApi'
+import { fetchWorkspaceData, requestAssistantReply, uploadPdfToCloudinary } from '@/api/workspaceApi'
 import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus } from '@/types/workspace'
 import { makeId } from '@/utils/id'
 import { nowLabel } from '@/utils/time'
@@ -27,8 +27,10 @@ export function useWorkspaceState() {
   const [reasoningLevel, setReasoningLevel] = useState<ReasoningLevel>('medium')
   const [showReasoningMenu, setShowReasoningMenu] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState('No file uploaded')
   const [filePages, setFilePages] = useState<number | null>(null)
+  const [fileUrl, setFileUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
   const messageEndRef = useRef<HTMLDivElement | null>(null)
@@ -141,11 +143,25 @@ export function useWorkspaceState() {
   )
 
   const triggerUpload = useCallback(async () => {
-    setUploadStatus('uploading')
-    const result = await simulateUploadDocument()
-    setUploadStatus('success')
-    setFilePages(result.pages)
-  }, [])
+    if (!selectedFile) {
+      setUploadStatus('error')
+      return
+    }
+
+    try {
+      setUploadStatus('uploading')
+      const result = await uploadPdfToCloudinary(selectedFile)
+      setUploadStatus('success')
+      setFilePages(result.pages)
+      setFileUrl(result.secureUrl)
+      if (result.originalFilename) {
+        setDocumentTitle(result.originalFilename)
+      }
+    } catch (error) {
+      console.error(error)
+      setUploadStatus('error')
+    }
+  }, [selectedFile])
 
   const onPickFile = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -153,10 +169,13 @@ export function useWorkspaceState() {
       if (!file) {
         return
       }
+      setSelectedFile(file)
       setFileName(file.name)
-      void triggerUpload()
+      setFilePages(null)
+      setFileUrl('')
+      setUploadStatus('idle')
     },
-    [triggerUpload],
+    [],
   )
 
   return {
@@ -190,6 +209,7 @@ export function useWorkspaceState() {
     uploadStatus,
     fileName,
     filePages,
+    fileUrl,
     onPickFile,
     triggerUpload,
     startNewChat,
