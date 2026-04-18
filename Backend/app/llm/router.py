@@ -18,22 +18,35 @@ class ServiceUnavailableError(RuntimeError):
     pass
 
 
+def _build_messages(prompt: str, extra_system_prompt: str | None = None) -> list[dict[str, str]]:
+    messages: list[dict[str, str]] = []
+    if extra_system_prompt and extra_system_prompt.strip():
+        # Use request-level system prompt as highest-priority instruction to avoid conflicts with defaults.
+        messages.append({"role": "system", "content": extra_system_prompt.strip()})
+    else:
+        system_prompt = settings.llm_system_prompt.strip()
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    return messages
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True)
-async def generate(prompt: str) -> str:
+async def generate(prompt: str, extra_system_prompt: str | None = None) -> str:
     try:
-        return await _call_openrouter(prompt)
-    except (RateLimitError, ServiceUnavailableError) as exc:
+        return await _call_openrouter(prompt, extra_system_prompt=extra_system_prompt)
+    except Exception as exc:
         logger.warning("openrouter_failed", error=str(exc), fallback="groq_direct")
-        return await _call_groq_direct(prompt)
+        return await _call_groq_direct(prompt, extra_system_prompt=extra_system_prompt)
 
 
-async def _call_openrouter(prompt: str) -> str:
+async def _call_openrouter(prompt: str, extra_system_prompt: str | None = None) -> str:
     if not settings.openrouter_api_key:
         raise ServiceUnavailableError("OPENROUTER_API_KEY is missing")
 
     payload = {
         "model": settings.openrouter_model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": _build_messages(prompt, extra_system_prompt=extra_system_prompt),
         "temperature": 0.1,
     }
     headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
@@ -49,19 +62,23 @@ async def _call_openrouter(prompt: str) -> str:
         raise RateLimitError("OpenRouter rate limited")
     if response.status_code in {502, 503, 504}:
         raise ServiceUnavailableError(f"OpenRouter unavailable: {response.status_code}")
-    response.raise_for_status()
+    if response.status_code >= 400:
+        raise ServiceUnavailableError(f"OpenRouter error {response.status_code}: {response.text[:300]}")
 
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    try:
+        return data["choices"][0]["message"]["content"]
+    except Exception as exc:
+        raise ServiceUnavailableError(f"OpenRouter invalid payload: {str(exc)}") from exc
 
 
-async def _call_groq_direct(prompt: str) -> str:
+async def _call_groq_direct(prompt: str, extra_system_prompt: str | None = None) -> str:
     if not settings.groq_api_key:
         return "He thong chua cau hinh LLM API key. Vui long cap nhat bien moi truong."
 
     payload = {
         "model": settings.groq_model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": _build_messages(prompt, extra_system_prompt=extra_system_prompt),
         "temperature": 0.1,
     }
     headers = {"Authorization": f"Bearer {settings.groq_api_key}"}
@@ -72,10 +89,14 @@ async def _call_groq_direct(prompt: str) -> str:
             json=payload,
             headers=headers,
         )
-    response.raise_for_status()
+    if response.status_code >= 400:
+        raise ServiceUnavailableError(f"Groq error {response.status_code}: {response.text[:300]}")
 
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    try:
+        return data["choices"][0]["message"]["content"]
+    except Exception as exc:
+        raise ServiceUnavailableError(f"Groq invalid payload: {str(exc)}") from exc
 
 
 async def check_openrouter_credential() -> dict:

@@ -7,6 +7,21 @@ This folder contains the backend RAG service for GovDoc Intellisense.
 ```text
 app/
   main.py
+  api/
+    routers/
+      health.py
+      llm.py
+      query.py
+      chat.py
+      documents.py
+      cloudinary.py
+  services/
+    health_service.py
+    llm_service.py
+    query_service.py
+    chat_service.py
+    import_service.py
+    cloudinary_service.py
   graphs/
     state.py
     import_graph.py
@@ -70,6 +85,19 @@ Form fields:
 - `doc_type` (optional, default `luat`)
 - `legal_domain` (optional)
 
+### POST `/api/v1/cloudinary/upload`
+Securely uploads a PDF to Cloudinary using backend-side signature.
+
+Form fields:
+- `file` (required, PDF)
+
+Response includes:
+- `secure_url`
+- `pages`
+- `original_filename`
+- `public_id`
+- `preview_image_url` (first-page image for fast preview)
+
 ## Environment Variables
 
 | Variable | Required | Description |
@@ -77,12 +105,18 @@ Form fields:
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key |
 | `GROQ_API_KEY` | No | Groq fallback API key |
 | `GROQ_MODEL` | No | Default: `llama-3.1-70b-versatile` |
-| `OPENROUTER_MODEL` | No | Default: `x-ai/grok-3` |
+| `OPENROUTER_MODEL` | No | Default: `google/gemini-2.5-flash-lite` |
+| `LLM_SYSTEM_PROMPT` | No | Default system instruction prepended to each LLM request |
+| `LLM_DEFAULT_CONTEXT` | No | Default legal context used when user does not send `[CONTEXT]` |
 | `QDRANT_URL` | Yes | Example: `http://127.0.0.1:6333` |
 | `QDRANT_API_KEY` | No | Qdrant API key |
 | `QDRANT_COLLECTION` | No | Default: `law_chunks` |
 | `EMBED_MODEL` | No | Default: `BAAI/bge-m3` |
 | `EMBED_DIM` | No | Default: `1024` |
+| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret (backend only) |
+| `UPLOAD_MAX_FILE_SIZE_MB` | No | Default: `15` |
 | `LOG_LEVEL` | No | Default: `INFO` |
 
 ## Run Locally
