@@ -20,6 +20,7 @@ export type Message = {
   role: MessageRole
   content: string
   citations?: string[]
+  createdAt?: string
 }
 
 export type WorkspaceData = {

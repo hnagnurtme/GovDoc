@@ -2,12 +2,23 @@ import styles from '@/components/workspace/Workspace.module.css'
 
 type WorkspaceTopbarProps = {
   onGoHome: () => void
+  isSidebarHidden: boolean
+  onToggleSidebar: () => void
 }
 
-export function WorkspaceTopbar({ onGoHome }: WorkspaceTopbarProps) {
+export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: WorkspaceTopbarProps) {
   return (
     <header className={styles.topbar}>
       <div className={styles.topbarLeft}>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          aria-label={isSidebarHidden ? 'Show left sidebar' : 'Hide left sidebar'}
+          title={isSidebarHidden ? 'Show left sidebar' : 'Hide left sidebar'}
+          onClick={onToggleSidebar}
+        >
+          <span className="material-symbols-outlined">{isSidebarHidden ? 'left_panel_open' : 'left_panel_close'}</span>
+        </button>
         <button type="button" className={styles.brand} onClick={onGoHome}>
           GovDoc Intellisense
         </button>

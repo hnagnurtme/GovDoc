@@ -18,6 +18,7 @@ type WorkspaceChatMainProps = {
   onUseQuickPrompt: (value: string) => void
   onToggleReasoningMenu: () => void
   onChangeReasoning: (value: ReasoningLevel) => void
+  onSendMessage: () => void
 }
 
 export function WorkspaceChatMain({
@@ -36,6 +37,7 @@ export function WorkspaceChatMain({
   onUseQuickPrompt,
   onToggleReasoningMenu,
   onChangeReasoning,
+  onSendMessage,
 }: WorkspaceChatMainProps) {
   return (
     <main className={styles.chatMain}>
@@ -73,6 +75,7 @@ export function WorkspaceChatMain({
                   ))}
                 </div>
               )}
+              {message.createdAt && <small className={styles.msgMeta}>{message.createdAt}</small>}
             </div>
           </article>
         ))}
@@ -131,9 +134,16 @@ export function WorkspaceChatMain({
               </div>
             )}
           </div>
-          <div className={styles.enterHint} aria-hidden="true" title="Press Enter to send">
-            <span className="material-symbols-outlined">keyboard_return</span>
-          </div>
+          <button
+            type="button"
+            className={`${styles.iconBtn} ${styles.sendBtn}`}
+            aria-label="Send"
+            title="Send"
+            disabled={!composerText.trim()}
+            onClick={onSendMessage}
+          >
+            <span className="material-symbols-outlined">send</span>
+          </button>
         </div>
       </footer>
     </main>

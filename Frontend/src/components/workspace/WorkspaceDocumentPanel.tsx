@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import styles from '@/components/workspace/Workspace.module.css'
 
 type WorkspaceDocumentPanelProps = {
@@ -17,6 +18,8 @@ export function WorkspaceDocumentPanel({
   previewImageUrl,
   uploadTimeText,
 }: WorkspaceDocumentPanelProps) {
+  const [isPdfLoading, setIsPdfLoading] = useState(true)
+
   return (
     <aside className={styles.docPanel}>
       <div className={styles.docTopbar}>
@@ -36,21 +39,21 @@ export function WorkspaceDocumentPanel({
       </div>
 
       <div className={styles.docPreviewWrap}>
-        {previewImageUrl ? (
-          <div className={styles.previewImageWrap}>
-            <img className={styles.previewImage} src={previewImageUrl} alt="First page preview" />
-            {fileUrl && (
-              <a className={styles.previewLink} href={fileUrl} target="_blank" rel="noreferrer">
-                Open full PDF
-              </a>
+        {fileUrl ? (
+          <div className={styles.pdfContainer}>
+            {isPdfLoading && previewImageUrl && (
+              <img className={styles.previewImageOverlay} src={previewImageUrl} alt="First page preview" />
             )}
+            <iframe
+              className={styles.pdfFrame}
+              src={`${fileUrl}#view=FitH`}
+              title="PDF Preview"
+              onLoad={() => setIsPdfLoading(false)}
+            />
+            <a className={styles.previewLink} href={fileUrl} target="_blank" rel="noreferrer">
+              Open full PDF
+            </a>
           </div>
-        ) : fileUrl ? (
-          <iframe
-            className={styles.pdfFrame}
-            src={`${fileUrl}#view=FitH`}
-            title="PDF Preview"
-          />
         ) : (
           <div className={styles.docPreview}>
             <div className={styles.docStrip} />

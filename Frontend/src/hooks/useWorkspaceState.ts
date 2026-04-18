@@ -94,6 +94,7 @@ export function useWorkspaceState() {
         {
           id: makeId('m-assistant'),
           role: 'assistant',
+          createdAt: nowLabel(),
           content: 'New chat created. Upload a PDF and ask your legal question.',
         },
       ],
@@ -111,6 +112,7 @@ export function useWorkspaceState() {
       id: makeId('m-user'),
       role: 'user',
       content: text,
+      createdAt: nowLabel(),
     }
 
     setMessagesByChat((prev) => ({
@@ -127,9 +129,13 @@ export function useWorkspaceState() {
     setShowReasoningMenu(false)
 
     const assistantMessage = await requestAssistantReply(text, reasoningLevel)
+    const normalizedAssistantMessage: Message = {
+      ...assistantMessage,
+      createdAt: assistantMessage.createdAt ?? nowLabel(),
+    }
     setMessagesByChat((prev) => ({
       ...prev,
-      [activeChatId]: [...(prev[activeChatId] ?? []), assistantMessage],
+      [activeChatId]: [...(prev[activeChatId] ?? []), normalizedAssistantMessage],
     }))
   }, [composerText, activeChatId, reasoningLevel])
 

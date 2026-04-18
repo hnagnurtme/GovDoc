@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WorkspaceChatMain } from '@/components/workspace/WorkspaceChatMain'
 import { WorkspaceDocumentPanel } from '@/components/workspace/WorkspaceDocumentPanel'
@@ -10,6 +10,8 @@ import { useWorkspaceState } from '@/hooks/useWorkspaceState'
 export function WorkspacePage() {
   const navigate = useNavigate()
   const state = useWorkspaceState()
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false)
+  const [previewWidth, setPreviewWidth] = useState(450)
 
   const uploadTimeText = useMemo(
     () => (state.uploadStatus === 'success' ? new Date().toLocaleTimeString() : 'N/A'),
@@ -25,11 +27,40 @@ export function WorkspacePage() {
     return <div className={`page ${styles.shell}`} />
   }
 
+  const startResizePreview = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const startX = event.clientX
+    const startWidth = previewWidth
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = startX - moveEvent.clientX
+      const nextWidth = Math.min(780, Math.max(340, startWidth + deltaX))
+      setPreviewWidth(nextWidth)
+    }
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }
+
+  const layoutStyle = {
+    '--sidebar-width': `${isSidebarHidden ? 0 : 288}px`,
+    '--preview-width': `${previewWidth}px`,
+  } as CSSProperties
+
   return (
     <div className={`page ${styles.shell}`}>
-      <WorkspaceTopbar onGoHome={() => navigate('/')} />
+      <WorkspaceTopbar
+        onGoHome={() => navigate('/')}
+        isSidebarHidden={isSidebarHidden}
+        onToggleSidebar={() => setIsSidebarHidden((prev) => !prev)}
+      />
 
-      <div className={styles.layout}>
+      <div className={styles.layout} style={layoutStyle}>
         <WorkspaceSidebar
           activeFolderId={state.activeChat?.folderId}
           visibleFolders={state.visibleFolders}
@@ -45,6 +76,10 @@ export function WorkspacePage() {
           onUpload={() => void state.triggerUpload()}
           activeChatId={state.activeChatId}
           chatTitlesById={chatTitlesById}
+          fileName={state.fileName}
+          filePages={state.filePages}
+          fileUrl={state.fileUrl}
+          isHidden={isSidebarHidden}
         />
 
         <WorkspaceChatMain
@@ -63,7 +98,10 @@ export function WorkspacePage() {
           onUseQuickPrompt={state.setComposerText}
           onToggleReasoningMenu={() => state.setShowReasoningMenu((prev) => !prev)}
           onChangeReasoning={state.setReasoningLevel}
+          onSendMessage={() => void state.sendMessage()}
         />
+
+        <div className={styles.previewResizeHandle} onMouseDown={startResizePreview} role="separator" aria-orientation="vertical" aria-label="Resize preview panel" />
 
         <WorkspaceDocumentPanel
           documentTitle={state.documentTitle}

@@ -17,6 +17,10 @@ type WorkspaceSidebarProps = {
   onUpload: () => void
   activeChatId: string
   chatTitlesById: Record<string, string>
+  fileName: string
+  filePages: number | null
+  fileUrl: string
+  isHidden: boolean
 }
 
 export function WorkspaceSidebar({
@@ -34,9 +38,13 @@ export function WorkspaceSidebar({
   onUpload,
   activeChatId,
   chatTitlesById,
+  fileName,
+  filePages,
+  fileUrl,
+  isHidden,
 }: WorkspaceSidebarProps) {
   return (
-    <aside className={styles.sidebar}>
+    <aside className={isHidden ? `${styles.sidebar} ${styles.sidebarHidden}` : styles.sidebar}>
       <button type="button" className={styles.newChat} onClick={onNewChat}>
         <span className="material-symbols-outlined">add</span>
         New Chat
@@ -62,6 +70,24 @@ export function WorkspaceSidebar({
           {uploadStatus === 'error' && 'Upload failed. Please retry'}
         </p>
       </div>
+
+      {uploadStatus === 'success' && fileName !== 'No file uploaded' && (
+        <div className={styles.sourceCard}>
+          <p className={styles.sectionTitle}>Source</p>
+          <div className={styles.sourceItem}>
+            <span className="material-symbols-outlined">description</span>
+            <div>
+              <strong>{fileName}</strong>
+              <small>{filePages ? `${filePages} pages` : 'Pages: N/A'}</small>
+            </div>
+          </div>
+          {fileUrl && (
+            <a className={styles.sourceLink} href={fileUrl} target="_blank" rel="noreferrer">
+              Open source file
+            </a>
+          )}
+        </div>
+      )}
 
       <div className={styles.sidebarSection}>
         <p className={styles.sectionTitle}>Knowledge Base</p>

@@ -20,6 +20,7 @@ export const workspaceMockData: WorkspaceData = {
       {
         id: 'm1',
         role: 'assistant',
+        createdAt: '10:21',
         content:
           'Welcome to GovDoc Intellisense. Ask a legal question after uploading a relevant document for better grounded answers.',
       },
@@ -28,6 +29,7 @@ export const workspaceMockData: WorkspaceData = {
       {
         id: 'm2',
         role: 'assistant',
+        createdAt: '09:18',
         content:
           'This conversation covers civil law topics. You can ask about ownership, contract validity, and obligations.',
       },
@@ -36,6 +38,7 @@ export const workspaceMockData: WorkspaceData = {
       {
         id: 'm3',
         role: 'assistant',
+        createdAt: '08:42',
         content:
           'This conversation focuses on criminal law. Ask concise questions for faster retrieval and clearer references.',
       },
@@ -44,6 +47,7 @@ export const workspaceMockData: WorkspaceData = {
       {
         id: 'm4',
         role: 'assistant',
+        createdAt: '07:55',
         content:
           'Overtime and labor compliance topics are ready. You can start with employee rights or employer obligations.',
       },
