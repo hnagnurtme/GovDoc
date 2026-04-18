@@ -1,0 +1,24 @@
+services:
+  mariadb-ai-rag:
+    image: mariadb:11.6
+    container_name: mariadb-ai-rag
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: viet_law_rag
+      MARIADB_USER: raguser
+      MARIADB_PASSWORD: ragpassword
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - mariadb_ai_rag_data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mariadb_ai_rag_data:
