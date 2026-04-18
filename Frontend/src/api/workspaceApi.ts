@@ -3,6 +3,44 @@ import type { Message, ReasoningLevel, WorkspaceData } from '@/types/workspace'
 import { delay } from '@/utils/async'
 import { makeId } from '@/utils/id'
 
+function normalizeAssistantContent(raw: string | undefined, fallbackPrompt: string): string {
+  const initial = (raw ?? '').trim()
+  if (!initial) {
+    return `No response returned for: "${fallbackPrompt}"`
+  }
+
+  let text = initial
+  const startsWithQuote = text.startsWith('"')
+  const endsWithQuote = text.endsWith('"')
+  if (startsWithQuote && endsWithQuote) {
+    try {
+      // Some providers return a JSON-encoded string inside "answer".
+      const parsed = JSON.parse(text)
+      if (typeof parsed === 'string') {
+        text = parsed
+      }
+    } catch {
+      // Fall back to manual unwrap/cleanup.
+      text = text.slice(1, -1)
+    }
+  }
+
+  // Decode common escaped characters for providers returning raw escaped text.
+  text = text
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+
+  // Remove one more wrapping quote pair if still present after decoding.
+  if (text.startsWith('"') && text.endsWith('"')) {
+    text = text.slice(1, -1)
+  }
+
+  return text
+}
+
 export async function fetchWorkspaceData(): Promise<WorkspaceData> {
   await delay(220)
   return structuredClone(workspaceMockData)
@@ -28,7 +66,7 @@ export async function requestAssistantReply(prompt: string, _reasoning: Reasonin
   return {
     id: makeId('m-assistant'),
     role: 'assistant',
-    content: data.answer?.trim() || `No response returned for: "${prompt}"`,
+    content: normalizeAssistantContent(data.answer, prompt),
     citations: [],
   }
 }

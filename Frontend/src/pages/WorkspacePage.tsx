@@ -85,6 +85,7 @@ export function WorkspacePage() {
         <WorkspaceChatMain
           workspaceName={state.workspaceName}
           messages={state.activeMessages}
+          isAwaitingAssistant={state.isAwaitingAssistant}
           messageEndRef={state.messageEndRef}
           quickPrompts={state.quickPrompts}
           composerText={state.composerText}

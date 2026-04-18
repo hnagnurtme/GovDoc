@@ -11,6 +11,23 @@ class Settings(BaseSettings):
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     groq_model: str = Field(default="llama-3.1-70b-versatile", alias="GROQ_MODEL")
     openrouter_model: str = Field(default="google/gemini-2.5-flash-lite", alias="OPENROUTER_MODEL")
+    llm_system_prompt: str = Field(
+        default=(
+            "De toi co the liet ke cac rui ro phap ly, vui long cung cap [CONTEXT] la cac van ban "
+            "phap luat lien quan den van de ban quan tam. Neu user khong gui [CONTEXT], "
+            "hay su dung [CONTEXT] mac dinh do he thong cung cap."
+        ),
+        alias="LLM_SYSTEM_PROMPT",
+    )
+    llm_default_context: str = Field(
+        default=(
+            "Bo luat Dan su 2015; Bo luat Lao dong 2019; Luat Doanh nghiep 2020; "
+            "Luat Dau tu 2020; Luat Thuong mai 2005; Luat Dat dai 2013; "
+            "Luat Nha o 2014; Luat Bao hiem xa hoi 2014; Luat Quan ly thue 2019; "
+            "Luat Bao ve quyen loi nguoi tieu dung 2023."
+        ),
+        alias="LLM_DEFAULT_CONTEXT",
+    )
 
     qdrant_url: str = Field(default="http://127.0.0.1:6333", alias="QDRANT_URL")
     qdrant_api_key: str = Field(default="", alias="QDRANT_API_KEY")

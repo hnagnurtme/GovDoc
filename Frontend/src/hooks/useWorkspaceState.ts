@@ -11,6 +11,44 @@ const DEFAULT_EXPANDED: Record<string, boolean> = {
   contracts: true,
 }
 
+const UPLOADED_PDF_STORAGE_KEY = 'govdoc.uploadedPdf'
+
+type StoredUploadedPdf = {
+  fileName: string
+  filePages: number | null
+  fileUrl: string
+  previewImageUrl: string
+}
+
+function readStoredUploadedPdf(): StoredUploadedPdf | null {
+  try {
+    const raw = localStorage.getItem(UPLOADED_PDF_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as StoredUploadedPdf
+    if (!parsed.fileUrl) {
+      return null
+    }
+    return {
+      fileName: parsed.fileName || 'Uploaded PDF',
+      filePages: typeof parsed.filePages === 'number' ? parsed.filePages : null,
+      fileUrl: parsed.fileUrl,
+      previewImageUrl: parsed.previewImageUrl || '',
+    }
+  } catch {
+    return null
+  }
+}
+
+function writeStoredUploadedPdf(value: StoredUploadedPdf): void {
+  localStorage.setItem(UPLOADED_PDF_STORAGE_KEY, JSON.stringify(value))
+}
+
+function clearStoredUploadedPdf(): void {
+  localStorage.removeItem(UPLOADED_PDF_STORAGE_KEY)
+}
+
 export function useWorkspaceState() {
   const [workspaceName, setWorkspaceName] = useState('Workspace')
   const [documentTitle, setDocumentTitle] = useState('Municipal Bylaw No. 2024-15')
@@ -26,6 +64,7 @@ export function useWorkspaceState() {
   const [domain, setDomain] = useState('All')
   const [reasoningLevel, setReasoningLevel] = useState<ReasoningLevel>('medium')
   const [showReasoningMenu, setShowReasoningMenu] = useState(false)
+  const [isAwaitingAssistant, setIsAwaitingAssistant] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState('No file uploaded')
@@ -47,6 +86,17 @@ export function useWorkspaceState() {
       setQuickPrompts(data.quickPrompts)
       setDomainOptions(data.domainOptions)
       setActiveChatId(data.chats[0]?.id ?? '')
+
+      const storedUpload = readStoredUploadedPdf()
+      if (storedUpload) {
+        setFileName(storedUpload.fileName)
+        setFilePages(storedUpload.filePages)
+        setFileUrl(storedUpload.fileUrl)
+        setPreviewImageUrl(storedUpload.previewImageUrl)
+        setDocumentTitle(storedUpload.fileName)
+        setUploadStatus('success')
+      }
+
       setIsLoading(false)
     })()
   }, [])
@@ -129,6 +179,7 @@ export function useWorkspaceState() {
     setShowReasoningMenu(false)
 
     let normalizedAssistantMessage: Message
+    setIsAwaitingAssistant(true)
     try {
       const assistantMessage = await requestAssistantReply(text, reasoningLevel)
       normalizedAssistantMessage = {
@@ -142,6 +193,8 @@ export function useWorkspaceState() {
         content: 'Demo chat API is unavailable right now. Please try again.',
         createdAt: nowLabel(),
       }
+    } finally {
+      setIsAwaitingAssistant(false)
     }
 
     setMessagesByChat((prev) => ({
@@ -173,9 +226,15 @@ export function useWorkspaceState() {
       setFilePages(result.pages)
       setFileUrl(result.secureUrl)
       setPreviewImageUrl(result.previewImageUrl ?? '')
-      if (result.originalFilename) {
-        setDocumentTitle(result.originalFilename)
-      }
+      const resolvedFileName = result.originalFilename || selectedFile.name
+      setFileName(resolvedFileName)
+      setDocumentTitle(resolvedFileName)
+      writeStoredUploadedPdf({
+        fileName: resolvedFileName,
+        filePages: result.pages ?? null,
+        fileUrl: result.secureUrl,
+        previewImageUrl: result.previewImageUrl ?? '',
+      })
     } catch (error) {
       console.error(error)
       setUploadStatus('error')
@@ -194,6 +253,7 @@ export function useWorkspaceState() {
       setFileUrl('')
       setPreviewImageUrl('')
       setUploadStatus('idle')
+      clearStoredUploadedPdf()
     },
     [],
   )
@@ -226,6 +286,7 @@ export function useWorkspaceState() {
     setReasoningLevel,
     showReasoningMenu,
     setShowReasoningMenu,
+    isAwaitingAssistant,
     uploadStatus,
     fileName,
     filePages,
