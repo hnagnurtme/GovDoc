@@ -7,6 +7,21 @@ This folder contains the backend RAG service for GovDoc Intellisense.
 ```text
 app/
   main.py
+  api/
+    routers/
+      health.py
+      llm.py
+      query.py
+      chat.py
+      documents.py
+      cloudinary.py
+  services/
+    health_service.py
+    llm_service.py
+    query_service.py
+    chat_service.py
+    import_service.py
+    cloudinary_service.py
   graphs/
     state.py
     import_graph.py
@@ -90,7 +105,7 @@ Response includes:
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key |
 | `GROQ_API_KEY` | No | Groq fallback API key |
 | `GROQ_MODEL` | No | Default: `llama-3.1-70b-versatile` |
-| `OPENROUTER_MODEL` | No | Default: `x-ai/grok-3` |
+| `OPENROUTER_MODEL` | No | Default: `google/gemini-2.5-flash-lite` |
 | `QDRANT_URL` | Yes | Example: `http://127.0.0.1:6333` |
 | `QDRANT_API_KEY` | No | Qdrant API key |
 | `QDRANT_COLLECTION` | No | Default: `law_chunks` |

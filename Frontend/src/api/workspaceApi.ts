@@ -8,15 +8,28 @@ export async function fetchWorkspaceData(): Promise<WorkspaceData> {
   return structuredClone(workspaceMockData)
 }
 
-export async function requestAssistantReply(prompt: string, reasoning: ReasoningLevel): Promise<Message> {
-  await delay(280)
+export async function requestAssistantReply(prompt: string, _reasoning: ReasoningLevel): Promise<Message> {
+  const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
+  const response = await fetch(`${backendApiBase}/chat/simple`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(`Simple chat failed (${response.status}): ${errorBody}`)
+  }
+
+  const data = (await response.json()) as { answer?: string }
 
   return {
     id: makeId('m-assistant'),
     role: 'assistant',
-    content:
-      `Draft answer (${reasoning.toUpperCase()} depth): for "${prompt}", based on the available context this question should be mapped to relevant Vietnamese legal clauses. Please review cited references before final legal use.`,
-    citations: ['Article 35 Labor Code 2019', 'Article 158 Civil Code 2015'],
+    content: data.answer?.trim() || `No response returned for: "${prompt}"`,
+    citations: [],
   }
 }
 

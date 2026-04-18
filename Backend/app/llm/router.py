@@ -22,7 +22,7 @@ class ServiceUnavailableError(RuntimeError):
 async def generate(prompt: str) -> str:
     try:
         return await _call_openrouter(prompt)
-    except (RateLimitError, ServiceUnavailableError) as exc:
+    except Exception as exc:
         logger.warning("openrouter_failed", error=str(exc), fallback="groq_direct")
         return await _call_groq_direct(prompt)
 
@@ -49,10 +49,14 @@ async def _call_openrouter(prompt: str) -> str:
         raise RateLimitError("OpenRouter rate limited")
     if response.status_code in {502, 503, 504}:
         raise ServiceUnavailableError(f"OpenRouter unavailable: {response.status_code}")
-    response.raise_for_status()
+    if response.status_code >= 400:
+        raise ServiceUnavailableError(f"OpenRouter error {response.status_code}: {response.text[:300]}")
 
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    try:
+        return data["choices"][0]["message"]["content"]
+    except Exception as exc:
+        raise ServiceUnavailableError(f"OpenRouter invalid payload: {str(exc)}") from exc
 
 
 async def _call_groq_direct(prompt: str) -> str:
@@ -72,10 +76,14 @@ async def _call_groq_direct(prompt: str) -> str:
             json=payload,
             headers=headers,
         )
-    response.raise_for_status()
+    if response.status_code >= 400:
+        raise ServiceUnavailableError(f"Groq error {response.status_code}: {response.text[:300]}")
 
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    try:
+        return data["choices"][0]["message"]["content"]
+    except Exception as exc:
+        raise ServiceUnavailableError(f"Groq invalid payload: {str(exc)}") from exc
 
 
 async def check_openrouter_credential() -> dict:

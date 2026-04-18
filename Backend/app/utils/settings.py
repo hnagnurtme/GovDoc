@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str = Field(default="", alias="OPENROUTER_API_KEY")
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     groq_model: str = Field(default="llama-3.1-70b-versatile", alias="GROQ_MODEL")
-    openrouter_model: str = Field(default="x-ai/grok-3", alias="OPENROUTER_MODEL")
+    openrouter_model: str = Field(default="google/gemini-2.5-flash-lite", alias="OPENROUTER_MODEL")
 
     qdrant_url: str = Field(default="http://127.0.0.1:6333", alias="QDRANT_URL")
     qdrant_api_key: str = Field(default="", alias="QDRANT_API_KEY")

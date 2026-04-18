@@ -128,11 +128,22 @@ export function useWorkspaceState() {
     setComposerText('')
     setShowReasoningMenu(false)
 
-    const assistantMessage = await requestAssistantReply(text, reasoningLevel)
-    const normalizedAssistantMessage: Message = {
-      ...assistantMessage,
-      createdAt: assistantMessage.createdAt ?? nowLabel(),
+    let normalizedAssistantMessage: Message
+    try {
+      const assistantMessage = await requestAssistantReply(text, reasoningLevel)
+      normalizedAssistantMessage = {
+        ...assistantMessage,
+        createdAt: assistantMessage.createdAt ?? nowLabel(),
+      }
+    } catch {
+      normalizedAssistantMessage = {
+        id: makeId('m-assistant'),
+        role: 'assistant',
+        content: 'Demo chat API is unavailable right now. Please try again.',
+        createdAt: nowLabel(),
+      }
     }
+
     setMessagesByChat((prev) => ({
       ...prev,
       [activeChatId]: [...(prev[activeChatId] ?? []), normalizedAssistantMessage],

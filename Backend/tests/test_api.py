@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, patch
 
 from app.main import app, settings
 
@@ -35,6 +36,15 @@ def test_import() -> None:
     body = response.json()
     assert body["status"] == "success"
     assert body["chunks_created"] >= 1
+
+
+def test_simple_chat() -> None:
+    with patch("app.services.chat_service.router.generate", new=AsyncMock(return_value="demo answer")):
+        response = client.post("/api/v1/chat/simple", json={"prompt": "Hello"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["answer"] == "demo answer"
+    assert isinstance(body["latency_ms"], int)
 
 
 def test_cloudinary_upload_requires_pdf() -> None:
