@@ -1,0 +1,84 @@
+# -----------------------------
+# OS / Editor
+# -----------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# -----------------------------
+# Secrets / Env
+# -----------------------------
+.env
+.env.*
+!.env.example
+Backend/.env
+Backend/.env.*
+!Backend/.env.example
+
+# -----------------------------
+# Python (Backend)
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dylib
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.pytype/
+.hypothesis/
+.nox/
+.tox/
+
+# Python virtual envs
+.venv/
+venv/
+env/
+
+# Backend artifacts
+Backend/.pytest_cache/
+Backend/.mypy_cache/
+Backend/.ruff_cache/
+Backend/.coverage
+Backend/htmlcov/
+
+# FE/processed data and local cache
+Backend/data/raw/
+Backend/data/processed/
+Backend/data/cache/
+
+# -----------------------------
+# Node / Frontend
+# -----------------------------
+node_modules/
+Frontend/node_modules/
+Frontend/dist/
+Frontend/dist-ssr/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------
+# Build / temp
+# -----------------------------
+build/
+dist/
+tmp/
+temp/
