@@ -1,0 +1,78 @@
+from __future__ import annotations
+
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from app.utils.logger import get_logger
+from app.utils.settings import get_settings
+
+logger = get_logger(__name__)
+settings = get_settings()
+
+
+class RateLimitError(RuntimeError):
+    pass
+
+
+class ServiceUnavailableError(RuntimeError):
+    pass
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True)
+async def generate(prompt: str) -> str:
+    try:
+        return await _call_openrouter(prompt)
+    except (RateLimitError, ServiceUnavailableError) as exc:
+        logger.warning("openrouter_failed", error=str(exc), fallback="grok_direct")
+        return await _call_grok_direct(prompt)
+
+
+async def _call_openrouter(prompt: str) -> str:
+    if not settings.openrouter_api_key:
+        raise ServiceUnavailableError("OPENROUTER_API_KEY is missing")
+
+    payload = {
+        "model": settings.openrouter_model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
+    }
+    headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers,
+        )
+
+    if response.status_code == 429:
+        raise RateLimitError("OpenRouter rate limited")
+    if response.status_code in {502, 503, 504}:
+        raise ServiceUnavailableError(f"OpenRouter unavailable: {response.status_code}")
+    response.raise_for_status()
+
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
+
+
+async def _call_grok_direct(prompt: str) -> str:
+    if not settings.grok_api_key:
+        return "He thong chua cau hinh LLM API key. Vui long cap nhat bien moi truong."
+
+    payload = {
+        "model": "grok-3",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
+    }
+    headers = {"Authorization": f"Bearer {settings.grok_api_key}"}
+
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(
+            "https://api.x.ai/v1/chat/completions",
+            json=payload,
+            headers=headers,
+        )
+    response.raise_for_status()
+
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
