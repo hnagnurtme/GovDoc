@@ -9,10 +9,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY Backend /workspace/Backend
+COPY Backend/requirements.runtime.txt /workspace/Backend/requirements.runtime.txt
 
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir /workspace/Backend
+RUN pip install --no-cache-dir -r /workspace/Backend/requirements.runtime.txt
+
+COPY Backend /workspace/Backend
 
 WORKDIR /workspace/Backend
 
