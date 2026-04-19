@@ -139,3 +139,19 @@ Swagger docs:
 ```bash
 /Users/anhnon/my_virtualenvs/govdoc/bin/python -m pytest tests -v
 ```
+
+## Sync Runtime Requirements
+
+Runtime Docker dependencies are generated from `pyproject.toml`.
+
+```bash
+cd Backend
+make sync-runtime-requirements
+```
+
+To verify sync state (useful in CI):
+
+```bash
+cd Backend
+make check-runtime-requirements
+```
