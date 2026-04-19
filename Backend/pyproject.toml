@@ -36,6 +36,10 @@ target-version = "py311"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*", "feature_engineering*"]
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
