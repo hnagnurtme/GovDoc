@@ -20,6 +20,20 @@ This folder contains a complete Docker setup for running GovDoc with:
 1. Docker and Docker Compose installed.
 2. A configured `Backend/.env` file with valid API keys.
 
+## Ensure .env Files
+
+Run the bootstrap script before starting the stack:
+
+```bash
+./Devops/scripts/ensure-env.sh
+```
+
+What it does:
+
+- Creates `Backend/.env` from `Backend/.env.example` if missing.
+- Creates `Frontend/.env` from `Frontend/.env.example` if missing.
+- Does not overwrite existing `.env` files.
+
 Minimum `Backend/.env` values:
 
 ```env
