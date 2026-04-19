@@ -10,23 +10,36 @@ jobs:
           version: default
 
       - run:
-          name: Docker Hub login
+          name: Phase 1 - Resolve backend image metadata
           command: |
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-      - run:
-          name: Build and push backend image
-          command: |
-            set -e
+            set -eu
 
             SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
             BACKEND_IMAGE="${DOCKERHUB_BACKEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-backend}"
 
-            if [ -n "$CIRCLE_TAG" ]; then
+            if [ -n "${CIRCLE_TAG:-}" ]; then
               IMAGE_TAGS="$CIRCLE_TAG"
             else
               IMAGE_TAGS="latest $SHORT_SHA"
             fi
+
+            echo "export BACKEND_IMAGE=$BACKEND_IMAGE" >> "$BASH_ENV"
+            echo "export IMAGE_TAGS='$IMAGE_TAGS'" >> "$BASH_ENV"
+
+            echo "Resolved BACKEND_IMAGE=$BACKEND_IMAGE"
+            echo "Resolved IMAGE_TAGS=$IMAGE_TAGS"
+
+      - run:
+          name: Phase 2 - Docker Hub login
+          command: |
+            set -eu
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - run:
+          name: Phase 3 - Build backend image
+          command: |
+            set -eu
+            . "$BASH_ENV"
 
             BUILD_TAG_ARGS=""
             for tag in $IMAGE_TAGS; do
@@ -35,6 +48,12 @@ jobs:
 
             # shellcheck disable=SC2086
             docker build -f Devops/Dockerfile.backend $BUILD_TAG_ARGS .
+
+      - run:
+          name: Phase 4 - Push backend image tags
+          command: |
+            set -eu
+            . "$BASH_ENV"
 
             for tag in $IMAGE_TAGS; do
               docker push "$BACKEND_IMAGE:$tag"
@@ -49,23 +68,36 @@ jobs:
           version: default
 
       - run:
-          name: Docker Hub login
+          name: Phase 1 - Resolve frontend image metadata
           command: |
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-      - run:
-          name: Build and push frontend image
-          command: |
-            set -e
+            set -eu
 
             SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
             FRONTEND_IMAGE="${DOCKERHUB_FRONTEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-frontend}"
 
-            if [ -n "$CIRCLE_TAG" ]; then
+            if [ -n "${CIRCLE_TAG:-}" ]; then
               IMAGE_TAGS="$CIRCLE_TAG"
             else
               IMAGE_TAGS="latest $SHORT_SHA"
             fi
+
+            echo "export FRONTEND_IMAGE=$FRONTEND_IMAGE" >> "$BASH_ENV"
+            echo "export IMAGE_TAGS='$IMAGE_TAGS'" >> "$BASH_ENV"
+
+            echo "Resolved FRONTEND_IMAGE=$FRONTEND_IMAGE"
+            echo "Resolved IMAGE_TAGS=$IMAGE_TAGS"
+
+      - run:
+          name: Phase 2 - Docker Hub login
+          command: |
+            set -eu
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - run:
+          name: Phase 3 - Build frontend image
+          command: |
+            set -eu
+            . "$BASH_ENV"
 
             BUILD_TAG_ARGS=""
             for tag in $IMAGE_TAGS; do
@@ -74,6 +106,12 @@ jobs:
 
             # shellcheck disable=SC2086
             docker build -f Devops/Dockerfile.frontend $BUILD_TAG_ARGS .
+
+      - run:
+          name: Phase 4 - Push frontend image tags
+          command: |
+            set -eu
+            . "$BASH_ENV"
 
             for tag in $IMAGE_TAGS; do
               docker push "$FRONTEND_IMAGE:$tag"
@@ -84,16 +122,24 @@ jobs:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Configure SSH key
+          name: Phase 1 - Configure SSH key
           command: |
+            set -eu
             mkdir -p ~/.ssh
             echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - run:
-          name: Deploy on remote host
+          name: Phase 2 - Validate SSH connectivity
           command: |
+            set -eu
+            ssh -o BatchMode=yes -o ConnectTimeout=10 -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "echo 'SSH connection established'"
+
+      - run:
+          name: Phase 3 - Deploy on remote host
+          command: |
+            set -eu
             ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "$SSH_DEPLOY_COMMAND"
 
 workflows:
