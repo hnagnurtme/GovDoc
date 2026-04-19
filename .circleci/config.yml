@@ -1,0 +1,127 @@
+version: 2.1
+
+jobs:
+  build_backend_container_image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: default
+
+      - run:
+          name: Docker Hub login
+          command: |
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - run:
+          name: Build and push backend image
+          command: |
+            set -e
+
+            SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
+            BACKEND_IMAGE="${DOCKERHUB_BACKEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-backend}"
+
+            if [ -n "$CIRCLE_TAG" ]; then
+              IMAGE_TAGS="$CIRCLE_TAG"
+            else
+              IMAGE_TAGS="latest $SHORT_SHA"
+            fi
+
+            BUILD_TAG_ARGS=""
+            for tag in $IMAGE_TAGS; do
+              BUILD_TAG_ARGS="$BUILD_TAG_ARGS -t $BACKEND_IMAGE:$tag"
+            done
+
+            # shellcheck disable=SC2086
+            docker build -f Devops/Dockerfile.backend $BUILD_TAG_ARGS .
+
+            for tag in $IMAGE_TAGS; do
+              docker push "$BACKEND_IMAGE:$tag"
+            done
+
+  build_frontend_container_image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: default
+
+      - run:
+          name: Docker Hub login
+          command: |
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - run:
+          name: Build and push frontend image
+          command: |
+            set -e
+
+            SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
+            FRONTEND_IMAGE="${DOCKERHUB_FRONTEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-frontend}"
+
+            if [ -n "$CIRCLE_TAG" ]; then
+              IMAGE_TAGS="$CIRCLE_TAG"
+            else
+              IMAGE_TAGS="latest $SHORT_SHA"
+            fi
+
+            BUILD_TAG_ARGS=""
+            for tag in $IMAGE_TAGS; do
+              BUILD_TAG_ARGS="$BUILD_TAG_ARGS -t $FRONTEND_IMAGE:$tag"
+            done
+
+            # shellcheck disable=SC2086
+            docker build -f Devops/Dockerfile.frontend $BUILD_TAG_ARGS .
+
+            for tag in $IMAGE_TAGS; do
+              docker push "$FRONTEND_IMAGE:$tag"
+            done
+
+  deploy_release_via_ssh:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Configure SSH key
+          command: |
+            mkdir -p ~/.ssh
+            echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - run:
+          name: Deploy on remote host
+          command: |
+            ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "$SSH_DEPLOY_COMMAND"
+
+workflows:
+  production_release_pipeline:
+    jobs:
+      - build_backend_container_image:
+          name: Build Backend Image
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - build_frontend_container_image:
+          name: Build Frontend Image
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - deploy_release_via_ssh:
+          name: Deploy Release Over SSH
+          requires:
+            - Build Backend Image
+            - Build Frontend Image
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
