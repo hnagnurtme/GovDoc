@@ -103,7 +103,7 @@ workflows:
           name: Build Backend Image
           filters:
             branches:
-              only: main
+              only: master
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
@@ -111,7 +111,7 @@ workflows:
           name: Build Frontend Image
           filters:
             branches:
-              only: main
+              only: master
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
