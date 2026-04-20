@@ -1,4 +1,4 @@
-# GovDoc Intellisense
+# GovDoc Intellisense README
 
 GovDoc Intellisense is a Retrieval-Augmented Generation (RAG) system for Vietnamese legal question answering, built with LangGraph, Qdrant, and OpenRouter/Groq.
 
