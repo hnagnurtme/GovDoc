@@ -9,8 +9,9 @@ class Settings(BaseSettings):
 
     openrouter_api_key: str = Field(default="", alias="OPENROUTER_API_KEY")
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
-    groq_model: str = Field(default="llama-3.1-70b-versatile", alias="GROQ_MODEL")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
     openrouter_model: str = Field(default="google/gemini-2.5-flash-lite", alias="OPENROUTER_MODEL")
+    llm_max_tokens: int = Field(default=1024, alias="LLM_MAX_TOKENS")
     llm_system_prompt: str = Field(
         default=(
             "De toi co the liet ke cac rui ro phap ly, vui long cung cap [CONTEXT] la cac van ban "

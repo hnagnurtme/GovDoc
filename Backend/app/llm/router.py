@@ -34,10 +34,10 @@ def _build_messages(prompt: str, extra_system_prompt: str | None = None) -> list
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True)
 async def generate(prompt: str, extra_system_prompt: str | None = None) -> str:
     try:
-        return await _call_openrouter(prompt, extra_system_prompt=extra_system_prompt)
-    except Exception as exc:
-        logger.warning("openrouter_failed", error=str(exc), fallback="groq_direct")
         return await _call_groq_direct(prompt, extra_system_prompt=extra_system_prompt)
+    except Exception as exc:
+        logger.warning("groq_failed", error=str(exc), fallback="openrouter")
+        return await _call_openrouter(prompt, extra_system_prompt=extra_system_prompt)
 
 
 async def _call_openrouter(prompt: str, extra_system_prompt: str | None = None) -> str:
@@ -48,6 +48,7 @@ async def _call_openrouter(prompt: str, extra_system_prompt: str | None = None) 
         "model": settings.openrouter_model,
         "messages": _build_messages(prompt, extra_system_prompt=extra_system_prompt),
         "temperature": 0.1,
+        "max_tokens": settings.llm_max_tokens,
     }
     headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
 
@@ -80,6 +81,7 @@ async def _call_groq_direct(prompt: str, extra_system_prompt: str | None = None)
         "model": settings.groq_model,
         "messages": _build_messages(prompt, extra_system_prompt=extra_system_prompt),
         "temperature": 0.1,
+        "max_tokens": settings.llm_max_tokens,
     }
     headers = {"Authorization": f"Bearer {settings.groq_api_key}"}
 

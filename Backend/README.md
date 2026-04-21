@@ -104,8 +104,9 @@ Response includes:
 |---|---|---|
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key |
 | `GROQ_API_KEY` | No | Groq fallback API key |
-| `GROQ_MODEL` | No | Default: `llama-3.1-70b-versatile` |
+| `GROQ_MODEL` | No | Default: `llama-3.3-70b-versatile` |
 | `OPENROUTER_MODEL` | No | Default: `google/gemini-2.5-flash-lite` |
+| `LLM_MAX_TOKENS` | No | Default: `1024` |
 | `LLM_SYSTEM_PROMPT` | No | Default system instruction prepended to each LLM request |
 | `LLM_DEFAULT_CONTEXT` | No | Default legal context used when user does not send `[CONTEXT]` |
 | `QDRANT_URL` | Yes | Example: `http://127.0.0.1:6333` |
