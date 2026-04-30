@@ -215,8 +215,10 @@ export function WorkspaceChatMain({
                 )}
                 {message.citations && message.citations.length > 0 && (
                   <div className={styles.citations}>
-                    {message.citations.map((citation) => (
-                      <span key={citation}>{citation}</span>
+                    {message.citations.map((citation, idx) => (
+                      <span key={`${citation.article_ref}-${idx}`} className={styles.citationBadge} title={citation.content || ''}>
+                        {citation.article_ref || 'Ref'} - {citation.doc_title || 'Document'}
+                      </span>
                     ))}
                   </div>
                 )}

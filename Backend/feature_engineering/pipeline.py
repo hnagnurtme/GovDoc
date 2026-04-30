@@ -22,9 +22,9 @@ def main() -> None:
     if args.step == "all":
         for name in ["load", "clean", "split", "enrich", "embed", "ingest"]:
             print(f"Running step: {name}")
-            STEPS[name]()
+            STEPS[name]()  # type: ignore
     else:
-        STEPS[args.step]()
+        STEPS[args.step]()  # type: ignore
 
 
 if __name__ == "__main__":

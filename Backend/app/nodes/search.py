@@ -9,9 +9,15 @@ async def run(state: GraphState) -> GraphState:
     if not query_embedding:
         return {**state, "retrieved_chunks": []}
 
-    top_k = state.get("top_k", 5)
+    top_k = state.get("top_k")
+    if top_k is None:
+        top_k = 5
+    
     legal_domain = state.get("legal_domain")
-    is_active_only = state.get("is_active_only", True)
+    
+    is_active_only = state.get("is_active_only")
+    if is_active_only is None:
+        is_active_only = True
 
     try:
         retrieved = search_chunks(

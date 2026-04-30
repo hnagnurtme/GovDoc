@@ -48,26 +48,26 @@ export async function fetchWorkspaceData(): Promise<WorkspaceData> {
 
 export async function requestAssistantReply(prompt: string, _reasoning: ReasoningLevel): Promise<Message> {
   const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
-  const response = await fetch(`${backendApiBase}/chat/simple`, {
+  const response = await fetch(`${backendApiBase}/query`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ question: prompt, top_k: 5 }),
   })
 
   if (!response.ok) {
     const errorBody = await response.text()
-    throw new Error(`Simple chat failed (${response.status}): ${errorBody}`)
+    throw new Error(`RAG query failed (${response.status}): ${errorBody}`)
   }
 
-  const data = (await response.json()) as { answer?: string }
+  const data = (await response.json()) as { answer: string; citations: any[] }
 
   return {
     id: makeId('m-assistant'),
     role: 'assistant',
     content: normalizeAssistantContent(data.answer, prompt),
-    citations: [],
+    citations: data.citations || [],
   }
 }
 
