@@ -1,5 +1,5 @@
 from __future__ import annotations
-import pymupdf4llm
+import pypdf
 from pathlib import Path
 from app.graphs.state import GraphState
 
@@ -13,8 +13,11 @@ async def run(state: GraphState) -> GraphState:
         return {**state, "error": f"File not found: {file_path}"}
 
     try:
-        # Using pymupdf4llm to extract structured markdown from PDF
-        raw_text = pymupdf4llm.to_markdown(str(path))
+        # Using pypdf to extract plain text from PDF
+        reader = pypdf.PdfReader(str(path))
+        raw_text = ""
+        for page in reader.pages:
+            raw_text += page.extract_text() + "\n"
     except Exception as exc:
         return {**state, "error": f"PDF extraction failed: {str(exc)}"}
 
