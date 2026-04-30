@@ -15,9 +15,12 @@ async def run(state: GraphState) -> GraphState:
     try:
         # Using pypdf to extract plain text from PDF
         reader = pypdf.PdfReader(str(path))
-        raw_text = ""
+        text_parts = []
         for page in reader.pages:
-            raw_text += page.extract_text() + "\n"
+            page_text = page.extract_text()
+            if page_text:
+                text_parts.append(page_text.strip())
+        raw_text = "\n\n".join(text_parts)
     except Exception as exc:
         return {**state, "error": f"PDF extraction failed: {str(exc)}"}
 
