@@ -968,3 +968,23 @@
     right: 0;
   }
 }
+
+.citationBadge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #c2ebe3;
+  color: #274d48;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: help;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.citationBadge:hover {
+  background: #00685f;
+  color: #ffffff;
+  border-color: #89f5e7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 104, 95, 0.2);
+}

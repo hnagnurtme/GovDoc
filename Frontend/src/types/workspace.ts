@@ -15,11 +15,18 @@ export type ChatItem = {
   folderId: string
 }
 
+export type Citation = {
+  article_ref: string | null
+  doc_title: string | null
+  content: string | null
+  score: number
+}
+
 export type Message = {
   id: string
   role: MessageRole
   content: string
-  citations?: string[]
+  citations?: Citation[]
   createdAt?: string
 }
 

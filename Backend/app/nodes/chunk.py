@@ -8,7 +8,8 @@ from app.utils.text_utils import normalize_text
 
 
 def _iter_sections(text: str) -> Iterable[str]:
-    parts = re.split(r"(?=Dieu\s+\d+|Điều\s+\d+)", text)
+    # Split by "Điều" or "Dieu" using lookahead to preserve the section title
+    parts = re.split(r"(?im)(?=^(?:\#+\s*)?(?:Dieu|Điều)\s+\d+)", text)
     for part in parts:
         cleaned = normalize_text(part)
         if cleaned:
