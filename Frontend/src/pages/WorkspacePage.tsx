@@ -89,17 +89,15 @@ export function WorkspacePage() {
           messageEndRef={state.messageEndRef}
           quickPrompts={state.quickPrompts}
           composerText={state.composerText}
-          domain={state.domain}
-          domainOptions={state.domainOptions}
           reasoningLevel={state.reasoningLevel}
           showReasoningMenu={state.showReasoningMenu}
-          onDomainChange={state.setDomain}
           onComposerChange={state.setComposerText}
           onComposerKeyDown={state.handleComposerKeyDown}
           onUseQuickPrompt={state.setComposerText}
           onToggleReasoningMenu={() => state.setShowReasoningMenu((prev) => !prev)}
           onChangeReasoning={state.setReasoningLevel}
           onSendMessage={() => void state.sendMessage()}
+          fileSummary={state.fileSummary}
         />
 
         <div className={styles.previewResizeHandle} onMouseDown={startResizePreview} role="separator" aria-orientation="vertical" aria-label="Resize preview panel" />

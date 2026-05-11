@@ -13,6 +13,8 @@ class QueryRequest(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20)
     legal_domain: str | None = None
     is_active_only: bool = True
+    doc_summary: str | None = None
+    history: list[dict[str, str]] = Field(default_factory=list)
 
 
 class Citation(BaseModel):
@@ -37,6 +39,8 @@ async def query(payload: QueryRequest) -> QueryResponse:
         top_k=payload.top_k,
         legal_domain=payload.legal_domain,
         is_active_only=payload.is_active_only,
+        doc_summary=payload.doc_summary,
+        history=payload.history,
     )
 
     if result.get("error"):

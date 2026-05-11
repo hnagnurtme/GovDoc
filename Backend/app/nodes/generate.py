@@ -28,23 +28,19 @@ def _extract_citations(chunks: list[dict]) -> list[dict]:
 async def run(state: GraphState) -> GraphState:
     question = state.get("question") or ""
     reranked = state.get("reranked_chunks") or []
-
-    if not reranked:
-        return {
-            **state,
-            "answer": "Khong tim thay dieu khoan phu hop voi cau hoi.",
-            "citations": [],
-        }
+    doc_summary = state.get("doc_summary") or ""
+    history = state.get("history") or []
 
     context = _build_context(reranked)
-    prompt = prompts.qa_prompt(question, context)
+    prompt = prompts.qa_prompt(question, context, doc_summary=doc_summary, history=history)
 
     try:
         answer = await router.generate(prompt)
-    except Exception:
+    except Exception as e:
         answer = (
-            "Theo cac dieu khoan truy xuat duoc, thong tin lien quan da duoc tong hop o phan trich dan. "
-            "Ban co the doi chieu truc tiep dieu luat de xac nhan noi dung chi tiet."
+            f"[TOM TAT] Đã xảy ra lỗi khi kết nối với trí tuệ nhân tạo: {str(e)}. "
+            "[CAN CU] Hệ thống gặp sự cố kỹ thuật. "
+            "[LUU Y] Vui lòng thử lại sau giây lát."
         )
 
     return {**state, "answer": answer, "citations": _extract_citations(reranked)}

@@ -1,3 +1,8 @@
+import warnings
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+# Also handle the specific LangChain warning which might be a subclass or named differently in some versions
+warnings.filterwarnings("ignore", message=".*allowed_objects.*")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

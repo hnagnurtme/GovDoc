@@ -38,4 +38,5 @@ export type WorkspaceData = {
   messagesByChat: Record<string, Message[]>
   quickPrompts: string[]
   domainOptions: string[]
+  summary?: string
 }

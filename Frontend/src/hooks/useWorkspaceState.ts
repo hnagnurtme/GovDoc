@@ -18,6 +18,7 @@ type StoredUploadedPdf = {
   filePages: number | null
   fileUrl: string
   previewImageUrl: string
+  summary: string | null
 }
 
 function readStoredUploadedPdf(): StoredUploadedPdf | null {
@@ -35,6 +36,7 @@ function readStoredUploadedPdf(): StoredUploadedPdf | null {
       filePages: typeof parsed.filePages === 'number' ? parsed.filePages : null,
       fileUrl: parsed.fileUrl,
       previewImageUrl: parsed.previewImageUrl || '',
+      summary: parsed.summary || null,
     }
   } catch {
     return null
@@ -71,6 +73,7 @@ export function useWorkspaceState() {
   const [filePages, setFilePages] = useState<number | null>(null)
   const [fileUrl, setFileUrl] = useState('')
   const [previewImageUrl, setPreviewImageUrl] = useState('')
+  const [fileSummary, setFileSummary] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const messageEndRef = useRef<HTMLDivElement | null>(null)
@@ -93,6 +96,7 @@ export function useWorkspaceState() {
         setFilePages(storedUpload.filePages)
         setFileUrl(storedUpload.fileUrl)
         setPreviewImageUrl(storedUpload.previewImageUrl)
+        setFileSummary(storedUpload.summary)
         setDocumentTitle(storedUpload.fileName)
         setUploadStatus('success')
       }
@@ -181,7 +185,8 @@ export function useWorkspaceState() {
     let normalizedAssistantMessage: Message
     setIsAwaitingAssistant(true)
     try {
-      const assistantMessage = await requestAssistantReply(text, reasoningLevel)
+      const history = activeMessages.map((m) => ({ role: m.role, content: m.content }))
+      const assistantMessage = await requestAssistantReply(text, reasoningLevel, history, fileSummary)
       normalizedAssistantMessage = {
         ...assistantMessage,
         createdAt: assistantMessage.createdAt ?? nowLabel(),
@@ -226,6 +231,7 @@ export function useWorkspaceState() {
       setFilePages(result.pages)
       setFileUrl(result.secureUrl)
       setPreviewImageUrl(result.previewImageUrl ?? '')
+      setFileSummary(result.summary)
       const resolvedFileName = result.originalFilename || selectedFile.name
       setFileName(resolvedFileName)
       setDocumentTitle(resolvedFileName)
@@ -234,6 +240,7 @@ export function useWorkspaceState() {
         filePages: result.pages ?? null,
         fileUrl: result.secureUrl,
         previewImageUrl: result.previewImageUrl ?? '',
+        summary: result.summary,
       })
     } catch (error) {
       console.error(error)
@@ -292,6 +299,7 @@ export function useWorkspaceState() {
     filePages,
     fileUrl,
     previewImageUrl,
+    fileSummary,
     onPickFile,
     triggerUpload,
     startNewChat,
