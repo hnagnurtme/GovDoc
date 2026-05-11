@@ -6,9 +6,11 @@ async def run(state: GraphState) -> GraphState:
     chunks = state.get("chunks")
     if chunks:
         texts = [c["content"] for c in chunks]
-        vectors = embedding_service.encode(texts)
+        # For indexing documents, use 'retrieval.passage'
+        vectors = embedding_service.encode(texts, task="retrieval.passage")
         return {**state, "embeddings": vectors}
 
     query = state.get("rewritten_query") or state.get("question") or ""
-    query_vec = embedding_service.encode(query)
+    # For searching, use 'retrieval.query'
+    query_vec = embedding_service.encode(query, task="retrieval.query")
     return {**state, "query_embedding": query_vec}

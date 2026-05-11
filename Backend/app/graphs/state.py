@@ -12,6 +12,7 @@ class GraphState(TypedDict, total=False):
     is_active_only: Optional[bool]
 
     raw_text: Optional[str]
+    summary: Optional[str]
     chunks: Optional[list[dict]]
     embeddings: Optional[list[list[float]]]
 
@@ -20,6 +21,9 @@ class GraphState(TypedDict, total=False):
     retrieved_chunks: Optional[list[dict]]
     reranked_chunks: Optional[list[dict]]
 
+    doc_summary: Optional[str]
+    history: Optional[list[dict[str, str]]]
+    
     answer: Optional[str]
     citations: Optional[list[dict]]
     doc_id: Optional[str]

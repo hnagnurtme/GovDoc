@@ -13,6 +13,7 @@ class ImportResponse(BaseModel):
     doc_id: str
     chunks_created: int
     status: str
+    summary: str | None = None
 
 
 @router.post("/import", response_model=ImportResponse)
@@ -40,4 +41,5 @@ async def import_document(
         doc_id=result.get("doc_id", "unknown"),
         chunks_created=int(result.get("chunks_created", 0)),
         status=result.get("status", "success"),
+        summary=result.get("summary"),
     )

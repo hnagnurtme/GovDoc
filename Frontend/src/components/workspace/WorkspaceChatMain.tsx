@@ -1,4 +1,4 @@
-import type { KeyboardEvent, MutableRefObject } from 'react'
+import { useState, type KeyboardEvent, type MutableRefObject } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Message, ReasoningLevel } from '@/types/workspace'
@@ -129,6 +129,7 @@ type WorkspaceChatMainProps = {
   onToggleReasoningMenu: () => void
   onChangeReasoning: (value: ReasoningLevel) => void
   onSendMessage: () => void
+  fileSummary: string | null
 }
 
 export function WorkspaceChatMain({
@@ -149,23 +150,41 @@ export function WorkspaceChatMain({
   onToggleReasoningMenu,
   onChangeReasoning,
   onSendMessage,
+  fileSummary,
 }: WorkspaceChatMainProps) {
+  const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(false)
   return (
     <main className={styles.chatMain}>
       <header className={styles.chatHeader}>
-        <div>
-          <h1>{workspaceName}</h1>
-        </div>
-        <div className={styles.chatHeaderActions}>
-          <select value={domain} onChange={(event) => onDomainChange(event.target.value)}>
-            {domainOptions.map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-          <button type="button" className={styles.iconBtn} aria-label="Share">
-            <span className="material-symbols-outlined">share</span>
-          </button>
-        </div>
+        {fileSummary ? (
+          <div className={`${styles.headerSummary} ${isSummaryCollapsed ? styles.headerSummaryCollapsed : ''}`}>
+            <div className={styles.summaryTitle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span className="material-symbols-outlined">description</span>
+                <strong>Document Summary</strong>
+              </div>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
+                aria-label={isSummaryCollapsed ? 'Expand summary' : 'Collapse summary'}
+              >
+                <span className="material-symbols-outlined">
+                  {isSummaryCollapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'}
+                </span>
+              </button>
+            </div>
+            {!isSummaryCollapsed && (
+              <div className={styles.summaryScroll}>
+                <MarkdownBlock content={fileSummary} compact />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <h1>{workspaceName}</h1>
+          </div>
+        )}
       </header>
 
       <div className={styles.chatScroll}>

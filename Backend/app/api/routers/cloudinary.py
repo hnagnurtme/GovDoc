@@ -16,10 +16,11 @@ class CloudinaryUploadResponse(BaseModel):
     original_filename: str | None = None
     public_id: str | None = None
     preview_image_url: str | None = None
+    summary: str | None = None
+
 
 @router.post("/cloudinary/upload", response_model=CloudinaryUploadResponse)
 async def upload_cloudinary_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...)
 ) -> CloudinaryUploadResponse:
     safe_filename = scan_and_sanitize_filename(file.filename or "")
@@ -33,13 +34,16 @@ async def upload_cloudinary_pdf(
         content_type=content_type,
     )
 
-    # Trigger ingestion pipeline in background
-    background_tasks.add_task(
-        import_document_to_graph,
+    # Run ingestion pipeline and wait for result (including summary)
+    import_result = await import_document_to_graph(
         file_bytes=file_bytes,
         filename=safe_filename,
         doc_type="luat",
         legal_domain=None
     )
 
-    return CloudinaryUploadResponse(**payload)
+    # Merge Cloudinary payload with summary from graph
+    return CloudinaryUploadResponse(
+        **payload,
+        summary=import_result.get("summary")
+    )

@@ -46,14 +46,22 @@ export async function fetchWorkspaceData(): Promise<WorkspaceData> {
   return structuredClone(workspaceMockData)
 }
 
-export async function requestAssistantReply(prompt: string, _reasoning: ReasoningLevel): Promise<Message> {
+export async function requestAssistantReply(
+  prompt: string,
+  _reasoning: ReasoningLevel,
+  history: { role: 'user' | 'assistant'; content: string }[] = [],
+  summary: string | null = null
+): Promise<Message> {
   const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
   const response = await fetch(`${backendApiBase}/query`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ question: prompt, top_k: 5 }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question: prompt,
+      top_k: 5,
+      history: history.map((m) => ({ role: m.role, content: m.content })),
+      doc_summary: summary,
+    }),
   })
 
   if (!response.ok) {
@@ -77,6 +85,7 @@ type CloudinaryUploadResponse = {
   original_filename?: string
   public_id?: string
   preview_image_url?: string
+  summary?: string
 }
 
 export type UploadedPdf = {
@@ -85,6 +94,7 @@ export type UploadedPdf = {
   originalFilename: string | null
   publicId: string | null
   previewImageUrl: string | null
+  summary: string | null
 }
 
 export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
@@ -109,5 +119,6 @@ export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
     originalFilename: data.original_filename ?? null,
     publicId: data.public_id ?? null,
     previewImageUrl: data.preview_image_url ?? null,
+    summary: data.summary ?? null,
   }
 }

@@ -100,6 +100,7 @@ export function WorkspacePage() {
           onToggleReasoningMenu={() => state.setShowReasoningMenu((prev) => !prev)}
           onChangeReasoning={state.setReasoningLevel}
           onSendMessage={() => void state.sendMessage()}
+          fileSummary={state.fileSummary}
         />
 
         <div className={styles.previewResizeHandle} onMouseDown={startResizePreview} role="separator" aria-orientation="vertical" aria-label="Resize preview panel" />
@@ -109,6 +110,7 @@ export function WorkspacePage() {
           fileName={state.fileName}
           filePages={state.filePages}
           fileUrl={state.fileUrl}
+          fileSummary={state.fileSummary}
           previewImageUrl={state.previewImageUrl}
           uploadTimeText={uploadTimeText}
         />
