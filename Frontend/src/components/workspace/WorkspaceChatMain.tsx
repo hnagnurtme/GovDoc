@@ -118,11 +118,8 @@ type WorkspaceChatMainProps = {
   messageEndRef: MutableRefObject<HTMLDivElement | null>
   quickPrompts: string[]
   composerText: string
-  domain: string
-  domainOptions: string[]
   reasoningLevel: ReasoningLevel
   showReasoningMenu: boolean
-  onDomainChange: (value: string) => void
   onComposerChange: (value: string) => void
   onComposerKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onUseQuickPrompt: (value: string) => void
@@ -139,11 +136,8 @@ export function WorkspaceChatMain({
   messageEndRef,
   quickPrompts,
   composerText,
-  domain,
-  domainOptions,
   reasoningLevel,
   showReasoningMenu,
-  onDomainChange,
   onComposerChange,
   onComposerKeyDown,
   onUseQuickPrompt,

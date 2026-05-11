@@ -89,11 +89,8 @@ export function WorkspacePage() {
           messageEndRef={state.messageEndRef}
           quickPrompts={state.quickPrompts}
           composerText={state.composerText}
-          domain={state.domain}
-          domainOptions={state.domainOptions}
           reasoningLevel={state.reasoningLevel}
           showReasoningMenu={state.showReasoningMenu}
-          onDomainChange={state.setDomain}
           onComposerChange={state.setComposerText}
           onComposerKeyDown={state.handleComposerKeyDown}
           onUseQuickPrompt={state.setComposerText}
@@ -110,7 +107,6 @@ export function WorkspacePage() {
           fileName={state.fileName}
           filePages={state.filePages}
           fileUrl={state.fileUrl}
-          fileSummary={state.fileSummary}
           previewImageUrl={state.previewImageUrl}
           uploadTimeText={uploadTimeText}
         />

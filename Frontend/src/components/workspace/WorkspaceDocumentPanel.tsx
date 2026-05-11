@@ -6,7 +6,6 @@ type WorkspaceDocumentPanelProps = {
   fileName: string
   filePages: number | null
   fileUrl: string
-  fileSummary: string | null
   previewImageUrl: string
   uploadTimeText: string
 }
@@ -16,7 +15,6 @@ export function WorkspaceDocumentPanel({
   fileName,
   filePages,
   fileUrl,
-  fileSummary,
   previewImageUrl,
   uploadTimeText,
 }: WorkspaceDocumentPanelProps) {
