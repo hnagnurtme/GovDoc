@@ -107,6 +107,7 @@ export function WorkspacePage() {
           fileName={state.fileName}
           filePages={state.filePages}
           fileUrl={state.fileUrl}
+          fileSummary={state.fileSummary}
           previewImageUrl={state.previewImageUrl}
           uploadTimeText={uploadTimeText}
         />
