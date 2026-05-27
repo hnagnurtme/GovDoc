@@ -38,6 +38,21 @@ export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: 
         <button type="button" className={styles.iconBtn} aria-label="Help">
           <span className="material-symbols-outlined">help</span>
         </button>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          aria-label="Logout"
+          title="Sign Out"
+          onClick={() => {
+            import('@/api/auth').then((auth) => {
+              auth.logout()
+              window.location.reload()
+            })
+          }}
+          style={{ marginRight: '8px' }}
+        >
+          <span className="material-symbols-outlined">logout</span>
+        </button>
         <div className={styles.avatar}>AI</div>
       </div>
     </header>

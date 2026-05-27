@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     upload_max_file_size_mb: int = Field(default=15, alias="UPLOAD_MAX_FILE_SIZE_MB")
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    database_url: str = Field(default="sqlite:///./govdoc.db", alias="DATABASE_URL")
+    jwt_secret: str = Field(default="govdoc_super_secret_key_12345", alias="JWT_SECRET")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
 
 
 @lru_cache

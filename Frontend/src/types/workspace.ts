@@ -30,12 +30,21 @@ export type Message = {
   createdAt?: string
 }
 
+export type StoredUploadedPdf = {
+  fileName: string
+  filePages: number | null
+  fileUrl: string
+  previewImageUrl: string
+  summary: string | null
+}
+
 export type WorkspaceData = {
   workspaceName: string
   documentTitle: string
   folders: ChatFolder[]
   chats: ChatItem[]
   messagesByChat: Record<string, Message[]>
+  documentsByChat?: Record<string, StoredUploadedPdf>
   quickPrompts: string[]
   domainOptions: string[]
   summary?: string

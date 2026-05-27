@@ -1,7 +1,19 @@
-import { workspaceMockData } from '@/mockdata/workspaceMockData'
+import { getToken } from '@/api/auth'
 import type { Message, ReasoningLevel, WorkspaceData } from '@/types/workspace'
-import { delay } from '@/utils/async'
 import { makeId } from '@/utils/id'
+
+function getApiBase() {
+  return import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
+}
+
+function getAuthHeaders(extraHeaders: Record<string, string> = {}) {
+  const headers: Record<string, string> = { ...extraHeaders }
+  const token = getToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
 
 function normalizeAssistantContent(raw: string | undefined, fallbackPrompt: string): string {
   const initial = (raw ?? '').trim()
@@ -14,18 +26,15 @@ function normalizeAssistantContent(raw: string | undefined, fallbackPrompt: stri
   const endsWithQuote = text.endsWith('"')
   if (startsWithQuote && endsWithQuote) {
     try {
-      // Some providers return a JSON-encoded string inside "answer".
       const parsed = JSON.parse(text)
       if (typeof parsed === 'string') {
         text = parsed
       }
     } catch {
-      // Fall back to manual unwrap/cleanup.
       text = text.slice(1, -1)
     }
   }
 
-  // Decode common escaped characters for providers returning raw escaped text.
   text = text
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
@@ -33,7 +42,6 @@ function normalizeAssistantContent(raw: string | undefined, fallbackPrompt: stri
     .replace(/\\"/g, '"')
     .replace(/\\\\/g, '\\')
 
-  // Remove one more wrapping quote pair if still present after decoding.
   if (text.startsWith('"') && text.endsWith('"')) {
     text = text.slice(1, -1)
   }
@@ -42,25 +50,39 @@ function normalizeAssistantContent(raw: string | undefined, fallbackPrompt: stri
 }
 
 export async function fetchWorkspaceData(): Promise<WorkspaceData> {
-  await delay(220)
-  return structuredClone(workspaceMockData)
+  const response = await fetch(`${getApiBase()}/workspace`, {
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Token expired or invalid, clear localStorage and force reload to redirect to login
+      localStorage.removeItem('govdoc.token')
+      window.location.reload()
+    }
+    const errorBody = await response.text()
+    throw new Error(`Failed to fetch workspace data (${response.status}): ${errorBody}`)
+  }
+
+  return (await response.json()) as WorkspaceData
 }
 
 export async function requestAssistantReply(
   prompt: string,
   _reasoning: ReasoningLevel,
   history: { role: 'user' | 'assistant'; content: string }[] = [],
-  summary: string | null = null
+  summary: string | null = null,
+  chatId?: string
 ): Promise<Message> {
-  const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
-  const response = await fetch(`${backendApiBase}/query`, {
+  const response = await fetch(`${getApiBase()}/query`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       question: prompt,
       top_k: 5,
       history: history.map((m) => ({ role: m.role, content: m.content })),
       doc_summary: summary,
+      chatId: chatId,
     }),
   })
 
@@ -97,13 +119,16 @@ export type UploadedPdf = {
   summary: string | null
 }
 
-export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
-  const backendApiBase = import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1'
+export async function uploadPdfToCloudinary(file: File, chatId?: string): Promise<UploadedPdf> {
   const formData = new FormData()
   formData.append('file', file)
+  if (chatId) {
+    formData.append('chatId', chatId)
+  }
 
-  const response = await fetch(`${backendApiBase}/cloudinary/upload`, {
+  const response = await fetch(`${getApiBase()}/cloudinary/upload`, {
     method: 'POST',
+    headers: getAuthHeaders(),
     body: formData,
   })
 
@@ -120,5 +145,48 @@ export async function uploadPdfToCloudinary(file: File): Promise<UploadedPdf> {
     publicId: data.public_id ?? null,
     previewImageUrl: data.preview_image_url ?? null,
     summary: data.summary ?? null,
+  }
+}
+
+// We can also export helper API calls for folders and chats
+export async function createFolderApi(id: string, name: string): Promise<void> {
+  const response = await fetch(`${getApiBase()}/folders`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ id, name }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to create folder: ${await response.text()}`)
+  }
+}
+
+export async function deleteFolderApi(folderId: string): Promise<void> {
+  const response = await fetch(`${getApiBase()}/folders/${folderId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to delete folder: ${await response.text()}`)
+  }
+}
+
+export async function createChatApi(id: string, title: string, folderId?: string): Promise<void> {
+  const response = await fetch(`${getApiBase()}/chats`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ id, title, folderId }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to create chat: ${await response.text()}`)
+  }
+}
+
+export async function deleteChatApi(chatId: string): Promise<void> {
+  const response = await fetch(`${getApiBase()}/chats/${chatId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to delete chat: ${await response.text()}`)
   }
 }

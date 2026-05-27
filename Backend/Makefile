@@ -1,7 +1,7 @@
 .PHONY: serve test lint clean sync-runtime-requirements check-runtime-requirements
 
 serve:
-	uvicorn app.main:app --reload --port 8000
+	PYTHONWARNINGS=ignore uvicorn app.main:app --reload --port 8000
 
 test:
 	pytest tests/ -v

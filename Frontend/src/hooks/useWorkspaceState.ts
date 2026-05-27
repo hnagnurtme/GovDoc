@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { fetchWorkspaceData, requestAssistantReply, uploadPdfToCloudinary } from '@/api/workspaceApi'
-import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus } from '@/types/workspace'
+import { 
+  fetchWorkspaceData, 
+  requestAssistantReply, 
+  uploadPdfToCloudinary,
+  createChatApi
+} from '@/api/workspaceApi'
+import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus, StoredUploadedPdf } from '@/types/workspace'
 import { makeId } from '@/utils/id'
 import { nowLabel } from '@/utils/time'
 
@@ -11,52 +16,13 @@ const DEFAULT_EXPANDED: Record<string, boolean> = {
   contracts: true,
 }
 
-const UPLOADED_PDF_STORAGE_KEY = 'govdoc.uploadedPdf'
-
-type StoredUploadedPdf = {
-  fileName: string
-  filePages: number | null
-  fileUrl: string
-  previewImageUrl: string
-  summary: string | null
-}
-
-function readStoredUploadedPdf(): StoredUploadedPdf | null {
-  try {
-    const raw = localStorage.getItem(UPLOADED_PDF_STORAGE_KEY)
-    if (!raw) {
-      return null
-    }
-    const parsed = JSON.parse(raw) as StoredUploadedPdf
-    if (!parsed.fileUrl) {
-      return null
-    }
-    return {
-      fileName: parsed.fileName || 'Uploaded PDF',
-      filePages: typeof parsed.filePages === 'number' ? parsed.filePages : null,
-      fileUrl: parsed.fileUrl,
-      previewImageUrl: parsed.previewImageUrl || '',
-      summary: parsed.summary || null,
-    }
-  } catch {
-    return null
-  }
-}
-
-function writeStoredUploadedPdf(value: StoredUploadedPdf): void {
-  localStorage.setItem(UPLOADED_PDF_STORAGE_KEY, JSON.stringify(value))
-}
-
-function clearStoredUploadedPdf(): void {
-  localStorage.removeItem(UPLOADED_PDF_STORAGE_KEY)
-}
-
 export function useWorkspaceState() {
   const [workspaceName, setWorkspaceName] = useState('Workspace')
   const [documentTitle, setDocumentTitle] = useState('Municipal Bylaw No. 2024-15')
   const [folders, setFolders] = useState<ChatFolder[]>([])
   const [chats, setChats] = useState<ChatItem[]>([])
   const [messagesByChat, setMessagesByChat] = useState<Record<string, Message[]>>({})
+  const [documentsByChat, setDocumentsByChat] = useState<Record<string, StoredUploadedPdf>>({})
   const [quickPrompts, setQuickPrompts] = useState<string[]>([])
   const [domainOptions, setDomainOptions] = useState<string[]>(['All'])
   const [activeChatId, setActiveChatId] = useState('')
@@ -78,32 +44,53 @@ export function useWorkspaceState() {
 
   const messageEndRef = useRef<HTMLDivElement | null>(null)
 
+  // Fetch workspace layout on initial load
   useEffect(() => {
     void (async () => {
-      const data = await fetchWorkspaceData()
-      setWorkspaceName(data.workspaceName)
-      setDocumentTitle(data.documentTitle)
-      setFolders(data.folders)
-      setChats(data.chats)
-      setMessagesByChat(data.messagesByChat)
-      setQuickPrompts(data.quickPrompts)
-      setDomainOptions(data.domainOptions)
-      setActiveChatId(data.chats[0]?.id ?? '')
-
-      const storedUpload = readStoredUploadedPdf()
-      if (storedUpload) {
-        setFileName(storedUpload.fileName)
-        setFilePages(storedUpload.filePages)
-        setFileUrl(storedUpload.fileUrl)
-        setPreviewImageUrl(storedUpload.previewImageUrl)
-        setFileSummary(storedUpload.summary)
-        setDocumentTitle(storedUpload.fileName)
-        setUploadStatus('success')
+      try {
+        const data = await fetchWorkspaceData()
+        setWorkspaceName(data.workspaceName)
+        setDocumentTitle(data.documentTitle)
+        setFolders(data.folders)
+        setChats(data.chats)
+        setMessagesByChat(data.messagesByChat)
+        setQuickPrompts(data.quickPrompts)
+        setDomainOptions(data.domainOptions)
+        setDocumentsByChat(data.documentsByChat || {})
+        
+        const initialChatId = data.chats[0]?.id ?? ''
+        setActiveChatId(initialChatId)
+      } catch (err) {
+        console.error('Failed to load workspace data from backend:', err)
+      } finally {
+        setIsLoading(false)
       }
-
-      setIsLoading(false)
     })()
   }, [])
+
+  // Sync document panel state when active chat changes
+  useEffect(() => {
+    if (!activeChatId) return
+
+    const activeDoc = documentsByChat[activeChatId]
+    if (activeDoc) {
+      setFileName(activeDoc.fileName)
+      setFilePages(activeDoc.filePages)
+      setFileUrl(activeDoc.fileUrl)
+      setPreviewImageUrl(activeDoc.previewImageUrl)
+      setFileSummary(activeDoc.summary)
+      setDocumentTitle(activeDoc.fileName)
+      setUploadStatus('success')
+    } else {
+      setFileName('No file uploaded')
+      setFilePages(null)
+      setFileUrl('')
+      setPreviewImageUrl('')
+      setFileSummary(null)
+      setDocumentTitle(workspaceName)
+      setUploadStatus('idle')
+    }
+  }, [activeChatId, documentsByChat, workspaceName])
 
   const activeMessages = useMemo(() => messagesByChat[activeChatId] ?? [], [messagesByChat, activeChatId])
   const activeChat = useMemo(() => chats.find((chat) => chat.id === activeChatId), [chats, activeChatId])
@@ -127,19 +114,29 @@ export function useWorkspaceState() {
     setExpandedFolders((prev) => ({ ...prev, [folderId]: !prev[folderId] }))
   }, [])
 
-  const startNewChat = useCallback(() => {
+  const startNewChat = useCallback(async () => {
     const id = makeId('chat')
+    const title = 'New conversation'
+    const folderId = 'contracts'
+
+    try {
+      await createChatApi(id, title, folderId)
+    } catch (err) {
+      console.error('Failed to persist new chat in database:', err)
+      return
+    }
+
     const newChat: ChatItem = {
       id,
-      title: 'New conversation',
+      title,
       updatedAt: 'Just now',
-      folderId: 'contracts',
+      folderId,
     }
 
     setChats((prev) => [newChat, ...prev])
     setFolders((prev) =>
       prev.map((folder) =>
-        folder.id === 'contracts' ? { ...folder, chatIds: [id, ...folder.chatIds] } : folder,
+        folder.id === folderId ? { ...folder, chatIds: [id, ...folder.chatIds] } : folder,
       ),
     )
     setMessagesByChat((prev) => ({
@@ -149,7 +146,7 @@ export function useWorkspaceState() {
           id: makeId('m-assistant'),
           role: 'assistant',
           createdAt: nowLabel(),
-          content: 'New chat created. Upload a PDF and ask your legal question.',
+          content: 'Conversation started. Upload a PDF and ask your question.',
         },
       ],
     }))
@@ -186,7 +183,8 @@ export function useWorkspaceState() {
     setIsAwaitingAssistant(true)
     try {
       const history = activeMessages.map((m) => ({ role: m.role, content: m.content }))
-      const assistantMessage = await requestAssistantReply(text, reasoningLevel, history, fileSummary)
+      // Pass the activeChatId to save in database
+      const assistantMessage = await requestAssistantReply(text, reasoningLevel, history, fileSummary, activeChatId)
       normalizedAssistantMessage = {
         ...assistantMessage,
         createdAt: assistantMessage.createdAt ?? nowLabel(),
@@ -195,7 +193,7 @@ export function useWorkspaceState() {
       normalizedAssistantMessage = {
         id: makeId('m-assistant'),
         role: 'assistant',
-        content: 'Demo chat API is unavailable right now. Please try again.',
+        content: 'Failed to retrieve response from assistant. Please try again.',
         createdAt: nowLabel(),
       }
     } finally {
@@ -206,7 +204,7 @@ export function useWorkspaceState() {
       ...prev,
       [activeChatId]: [...(prev[activeChatId] ?? []), normalizedAssistantMessage],
     }))
-  }, [composerText, activeChatId, reasoningLevel])
+  }, [composerText, activeChatId, reasoningLevel, activeMessages, fileSummary])
 
   const handleComposerKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -219,14 +217,15 @@ export function useWorkspaceState() {
   )
 
   const triggerUpload = useCallback(async () => {
-    if (!selectedFile) {
+    if (!selectedFile || !activeChatId) {
       setUploadStatus('error')
       return
     }
 
     try {
       setUploadStatus('uploading')
-      const result = await uploadPdfToCloudinary(selectedFile)
+      // Pass the activeChatId to link the uploaded document to this chat
+      const result = await uploadPdfToCloudinary(selectedFile, activeChatId)
       setUploadStatus('success')
       setFilePages(result.pages)
       setFileUrl(result.secureUrl)
@@ -235,18 +234,24 @@ export function useWorkspaceState() {
       const resolvedFileName = result.originalFilename || selectedFile.name
       setFileName(resolvedFileName)
       setDocumentTitle(resolvedFileName)
-      writeStoredUploadedPdf({
+
+      // Save document status locally in state mapping
+      const newDoc: StoredUploadedPdf = {
         fileName: resolvedFileName,
         filePages: result.pages ?? null,
         fileUrl: result.secureUrl,
         previewImageUrl: result.previewImageUrl ?? '',
         summary: result.summary,
-      })
+      }
+      setDocumentsByChat((prev) => ({
+        ...prev,
+        [activeChatId]: newDoc,
+      }))
     } catch (error) {
       console.error(error)
       setUploadStatus('error')
     }
-  }, [selectedFile])
+  }, [selectedFile, activeChatId])
 
   const onPickFile = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -260,7 +265,6 @@ export function useWorkspaceState() {
       setFileUrl('')
       setPreviewImageUrl('')
       setUploadStatus('idle')
-      clearStoredUploadedPdf()
     },
     [],
   )
