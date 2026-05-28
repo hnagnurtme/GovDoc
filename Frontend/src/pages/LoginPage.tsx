@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loginApi } from '@/api/auth'
-import styles from '@/components/workspace/Workspace.module.css'
 
 export function LoginPage() {
   const [username, setUsername] = useState('')
