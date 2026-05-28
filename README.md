@@ -154,7 +154,7 @@ curl http://localhost:8000/api/v1/health
 | LLM Primary | Groq via OpenRouter |
 | LLM Fallback | Groq direct API |
 
----
+----
 
 ## License
 
