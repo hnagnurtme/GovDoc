@@ -14,13 +14,15 @@ def _get_contextual_prefix(doc_title: str, chapter: str, section: str) -> str:
 
 async def run(state: GraphState) -> GraphState:
     raw_text = state.get("raw_text") or ""
-    doc_title = state.get("doc_title") or (state.get("file_path") or "unknown").split("/")[-1].split(".")[0]
+    doc_title = (
+        state.get("doc_title") or (state.get("file_path") or "unknown").split("/")[-1].split(".")[0]
+    )
     doc_id = (state.get("file_path") or "unknown").split("/")[-1].split(".")[0]
 
     # Split by "Điều" or "Dieu" using lookahead
     # Also need to identify "Chương" and "Mục" to maintain context
     sections = re.split(r"(?im)(?=^(?:\#+\s*)?(?:Dieu|Điều)\s+\d+)", raw_text)
-    
+
     chunks: list[dict] = []
     current_chapter = ""
     current_section = ""
@@ -34,14 +36,16 @@ async def run(state: GraphState) -> GraphState:
         # Look for Chapter or Section titles within this content to update state for NEXT chunks
         # Note: Usually a "Điều" is within a Chapter/Section.
         # If this is the FIRST chunk (preamble), it might contain the first Chapter title.
-        
+
         # Check for Chapter (Chương)
-        chapter_match = re.search(r"(?im)^(?:Chương|Chuong)\s+([IVXLCDM\d\.]+)(?::?\s*(.*))?", content)
+        chapter_match = re.search(
+            r"(?im)^(?:Chương|Chuong)\s+([IVXLCDM\d\.]+)(?::?\s*(.*))?", content
+        )
         if chapter_match:
             chapter_num = chapter_match.group(1)
             chapter_name = chapter_match.group(2) or ""
             current_chapter = f"Chương {chapter_num}: {chapter_name.strip()}".strip(" :")
-            current_section = "" # Reset section when chapter changes
+            current_section = ""  # Reset section when chapter changes
 
         # Check for Section (Mục)
         section_match = re.search(r"(?im)^(?:Mục|Muc)\s+(\d+)(?::?\s*(.*))?", content)
@@ -52,7 +56,7 @@ async def run(state: GraphState) -> GraphState:
 
         # Determine if this chunk is an Article or Preamble
         article_num = extract_number(content, "(?:Dieu|Điều)")
-        
+
         if article_num:
             article_ref = f"Điều {article_num}"
         else:
@@ -71,23 +75,29 @@ async def run(state: GraphState) -> GraphState:
                 # re.split with capturing group keeps the group in the list
                 # sub_sections looks like ['', '1. ', 'Content...', '2. ', 'Content...']
                 current_sub = sub_sections[0]
+                intro = current_sub.strip()
                 for i in range(1, len(sub_sections), 2):
                     marker = sub_sections[i]
-                    sub_text = sub_sections[i+1]
-                    combined = prefix + marker + sub_text
-                    chunks.append({
-                        "chunk_id": f"{doc_id}_{idx}_{i//2 + 1}",
-                        "doc_id": doc_id,
-                        "doc_title": doc_title,
-                        "doc_type": state.get("doc_type", "luat"),
-                        "legal_domain": state.get("legal_domain"),
-                        "article_ref": f"{article_ref} (Khoản {marker.strip('.')})",
-                        "chapter": current_chapter,
-                        "section": current_section,
-                        "content": combined,
-                        "is_active": True,
-                    })
-                continue # Skip the main article chunk as it's split
+                    sub_text = sub_sections[i + 1]
+                    if intro:
+                        combined = prefix + intro + "\n" + marker + sub_text
+                    else:
+                        combined = prefix + marker + sub_text
+                    chunks.append(
+                        {
+                            "chunk_id": f"{doc_id}_{idx}_{i // 2 + 1}",
+                            "doc_id": doc_id,
+                            "doc_title": doc_title,
+                            "doc_type": state.get("doc_type", "luat"),
+                            "legal_domain": state.get("legal_domain"),
+                            "article_ref": f"{article_ref} (Khoản {marker.strip('.')})",
+                            "chapter": current_chapter,
+                            "section": current_section,
+                            "content": combined,
+                            "is_active": True,
+                        }
+                    )
+                continue  # Skip the main article chunk as it's split
 
         chunks.append(
             {
