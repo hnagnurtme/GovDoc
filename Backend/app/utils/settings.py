@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     embed_model: str = Field(default="BAAI/bge-m3", alias="EMBED_MODEL")
     embed_dim: int = Field(default=1024, alias="EMBED_DIM")
+    embed_device: str | None = Field(default=None, alias="EMBED_DEVICE")
     jina_api_key: str = Field(default="", alias="JINA_API_KEY")
 
     cloudinary_cloud_name: str = Field(default="", alias="CLOUDINARY_CLOUD_NAME")
