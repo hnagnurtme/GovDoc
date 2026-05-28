@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from typing import Any
 
 from qdrant_client import QdrantClient
@@ -31,9 +32,8 @@ def _get_client() -> QdrantClient:
     return _client
 
 
-def _point_id(value: str) -> int:
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
-    return int(digest[:16], 16)
+def _point_id(value: str) -> str:
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, value))
 
 
 def ensure_collection() -> None:

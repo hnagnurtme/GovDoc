@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import asyncio
 from app.db.connection import search_chunks
 from app.graphs.state import GraphState
 
@@ -27,7 +26,8 @@ async def run(state: GraphState) -> GraphState:
         is_active_only = True
 
     try:
-        retrieved = search_chunks(
+        retrieved = await asyncio.to_thread(
+            search_chunks,
             query_embedding=query_embedding,
             top_k=top_k,
             legal_domain=legal_domain,
