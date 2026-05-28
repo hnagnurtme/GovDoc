@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import asyncio
 from app.db.connection import upsert_chunks
 from app.graphs.state import GraphState
 
@@ -13,7 +12,7 @@ async def run(state: GraphState) -> GraphState:
     upsert_error: str | None = None
     try:
         if chunks and embeddings:
-            upsert_chunks(chunks, embeddings)
+            await asyncio.to_thread(upsert_chunks, chunks, embeddings)
     except Exception as exc:
         upsert_error = str(exc)
 
