@@ -89,19 +89,20 @@ class EmbeddingService:
         result_embeddings: list[list[float]] = [[]] * len(texts)
         
         # We process chunks sequentially or concurrently. Let's do sequentially to avoid hitting rate limits.
-        for i in range(0, len(texts), chunk_size):
-            batch = texts[i:i + chunk_size]
-            payload = {
-                "model": settings.embed_model,
-                "task": task or "retrieval.passage",
-                "dimensions": settings.embed_dim,
-                "late_chunking": False,
-                "embedding_type": "float",
-                "input": batch
-            }
-            logger.info("requesting_jina_embeddings", model=settings.embed_model, batch_size=len(batch))
-            
-            async with httpx.AsyncClient(timeout=60.0) as client:
+        # Reuse a single AsyncClient instance across batches to optimize performance.
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            for i in range(0, len(texts), chunk_size):
+                batch = texts[i:i + chunk_size]
+                payload = {
+                    "model": settings.embed_model,
+                    "task": task or "retrieval.passage",
+                    "dimensions": settings.embed_dim,
+                    "late_chunking": False,
+                    "embedding_type": "float",
+                    "input": batch
+                }
+                logger.info("requesting_jina_embeddings", model=settings.embed_model, batch_size=len(batch))
+                
                 response = await client.post(url, headers=headers, json=payload)
                 if response.status_code != 200:
                     logger.error("jina_embedding_failed", status_code=response.status_code, body=response.text)
