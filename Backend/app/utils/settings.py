@@ -1,7 +1,11 @@
 from functools import lru_cache
 
-from pydantic import Field
+from dotenv import load_dotenv
+from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -44,7 +48,10 @@ class Settings(BaseSettings):
     upload_max_file_size_mb: int = Field(default=15, alias="UPLOAD_MAX_FILE_SIZE_MB")
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    database_url: str = Field(default="sqlite:///./govdoc.db", alias="DATABASE_URL")
+    database_url: str = Field(
+        default="sqlite:///./govdoc.db",
+        validation_alias=AliasChoices("DB_URL", "DATABASE_URL"),
+    )
     jwt_secret: str = Field(default="govdoc_super_secret_key_12345", alias="JWT_SECRET")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
 
