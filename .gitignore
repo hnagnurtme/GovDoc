@@ -82,3 +82,6 @@ build/
 dist/
 tmp/
 temp/
+.omg/
+.codeboarding/
+govdoc.db
