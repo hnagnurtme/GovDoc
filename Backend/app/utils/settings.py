@@ -1,7 +1,11 @@
 from functools import lru_cache
 
-from pydantic import Field
+from dotenv import load_dotenv
+from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -36,6 +40,7 @@ class Settings(BaseSettings):
 
     embed_model: str = Field(default="BAAI/bge-m3", alias="EMBED_MODEL")
     embed_dim: int = Field(default=1024, alias="EMBED_DIM")
+    embed_device: str | None = Field(default=None, alias="EMBED_DEVICE")
     jina_api_key: str = Field(default="", alias="JINA_API_KEY")
 
     cloudinary_cloud_name: str = Field(default="", alias="CLOUDINARY_CLOUD_NAME")
@@ -44,7 +49,10 @@ class Settings(BaseSettings):
     upload_max_file_size_mb: int = Field(default=15, alias="UPLOAD_MAX_FILE_SIZE_MB")
 
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    database_url: str = Field(default="sqlite:///./govdoc.db", alias="DATABASE_URL")
+    database_url: str = Field(
+        default="sqlite:///./govdoc.db",
+        validation_alias=AliasChoices("DB_URL", "DATABASE_URL"),
+    )
     jwt_secret: str = Field(default="govdoc_super_secret_key_12345", alias="JWT_SECRET")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
 

@@ -2,6 +2,12 @@ from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
 from app.main import app, settings
+from app.services.auth_service import get_current_user
+from app.db import models
+
+# Mock authentication dependency globally for tests
+dummy_user = models.User(id=1, username="testuser", password_hash="mocked_password")
+app.dependency_overrides[get_current_user] = lambda: dummy_user
 
 client = TestClient(app)
 
@@ -21,7 +27,19 @@ def test_query() -> None:
         "top_k": 3,
         "legal_domain": "lao_dong",
     }
-    response = client.post("/api/v1/query", json=payload)
+    mock_result = {
+        "answer": "Theo Bộ luật Lao động 2019...",
+        "citations": [
+            {
+                "article_ref": "Điều 35",
+                "doc_title": "Bộ luật Lao động 2019",
+                "content": "Người lao động có quyền đơn phương chấm dứt hợp đồng...",
+                "score": 0.95,
+            }
+        ],
+    }
+    with patch("app.api.routers.query.run_query", new=AsyncMock(return_value=mock_result)):
+        response = client.post("/api/v1/query", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "answer" in data
@@ -31,7 +49,14 @@ def test_query() -> None:
 def test_import() -> None:
     files = {"file": ("law.pdf", b"Dieu 1 Noi dung luat\nDieu 2 Dieu khoan", "application/pdf")}
     data = {"doc_type": "luat", "legal_domain": "dan_su"}
-    response = client.post("/api/v1/import", files=files, data=data)
+    mock_result = {
+        "status": "success",
+        "chunks_created": 5,
+        "doc_id": "test-doc-id",
+        "summary": "test summary",
+    }
+    with patch("app.api.routers.documents.import_document_to_graph", new=AsyncMock(return_value=mock_result)):
+        response = client.post("/api/v1/import", files=files, data=data)
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "success"

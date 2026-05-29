@@ -57,6 +57,8 @@ Backend/htmlcov/
 Backend/data/raw/
 Backend/data/processed/
 Backend/data/cache/
+Backend/feature_engineering/data/
+
 
 # -----------------------------
 # Node / Frontend
@@ -82,3 +84,7 @@ build/
 dist/
 tmp/
 temp/
+.omg/
+.codeboarding/
+govdoc.db
+.antigravitycli/
