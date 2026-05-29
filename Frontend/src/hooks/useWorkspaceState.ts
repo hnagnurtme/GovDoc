@@ -3,7 +3,8 @@ import {
   fetchWorkspaceData, 
   requestAssistantReply, 
   uploadPdfToCloudinary,
-  createChatApi
+  createChatApi,
+  fetchChatMessages,
 } from '@/api/workspaceApi'
 import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus, StoredUploadedPdf } from '@/types/workspace'
 import { makeId } from '@/utils/id'
@@ -41,6 +42,9 @@ export function useWorkspaceState() {
   const [previewImageUrl, setPreviewImageUrl] = useState('')
   const [fileSummary, setFileSummary] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  // Track which chatIds have had messages loaded to avoid duplicate fetches
+  const loadedChatIds = useRef<Set<string>>(new Set())
 
   const messageEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -95,6 +99,24 @@ export function useWorkspaceState() {
   const activeMessages = useMemo(() => messagesByChat[activeChatId] ?? [], [messagesByChat, activeChatId])
   const activeChat = useMemo(() => chats.find((chat) => chat.id === activeChatId), [chats, activeChatId])
 
+  // Lazy-load messages when switching chats (only fetch once per chat session)
+  useEffect(() => {
+    if (!activeChatId || loadedChatIds.current.has(activeChatId)) return
+    loadedChatIds.current.add(activeChatId)
+
+    void (async () => {
+      setIsLoadingMessages(true)
+      try {
+        const messages = await fetchChatMessages(activeChatId)
+        setMessagesByChat((prev) => ({ ...prev, [activeChatId]: messages }))
+      } catch (err) {
+        console.error('Failed to load messages for chat', activeChatId, err)
+      } finally {
+        setIsLoadingMessages(false)
+      }
+    })()
+  }, [activeChatId])
+
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeMessages])
@@ -107,8 +129,8 @@ export function useWorkspaceState() {
     return chats.filter((chat) => chat.title.toLowerCase().includes(q))
   }, [chats, historyFilter])
 
-  const visibleFolders = useMemo(() => folders.slice(0, 2), [folders])
-  const visibleRecentChats = useMemo(() => filteredChats.slice(0, 4), [filteredChats])
+  const visibleFolders = useMemo(() => folders, [folders])
+  const visibleRecentChats = useMemo(() => filteredChats, [filteredChats])
 
   const toggleFolder = useCallback((folderId: string) => {
     setExpandedFolders((prev) => ({ ...prev, [folderId]: !prev[folderId] }))
@@ -308,5 +330,6 @@ export function useWorkspaceState() {
     triggerUpload,
     startNewChat,
     isLoading,
+    isLoadingMessages,
   }
 }

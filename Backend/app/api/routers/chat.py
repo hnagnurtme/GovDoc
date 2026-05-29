@@ -147,73 +147,52 @@ def get_workspace(
         for chat in db_chats
     ]
 
-    # 3. Fetch Messages & Documents for Workspace Document panel
-    messages_by_chat: dict[str, list[MessageResponse]] = {}
+    # 3. Bulk-fetch latest document per chat (1 query instead of N)
+    chat_ids = [c.id for c in db_chats]
     documents_by_chat: dict[str, DocumentResponse] = {}
     latest_document_title = "Municipal Bylaw No. 2024-15"
 
-    for chat in db_chats:
-        chat_msgs = db.query(models.Message).filter(models.Message.chat_id == chat.id).order_by(models.Message.created_at.asc()).all()
-        msg_list = []
-        for m in chat_msgs:
-            citations_list = []
-            if m.citations:
-                try:
-                    citations_list = json.loads(m.citations)
-                except Exception:
-                    pass
-            msg_list.append(
-                MessageResponse(
-                    id=m.id,
-                    role=m.role,
-                    content=m.content,
-                    createdAt=m.created_at.strftime("%H:%M"),
-                    citations=citations_list
+    if chat_ids:
+        all_docs = (
+            db.query(models.Document)
+            .filter(models.Document.chat_id.in_(chat_ids))
+            .order_by(models.Document.created_at.desc())
+            .all()
+        )
+        seen: set[str] = set()
+        for doc in all_docs:
+            if doc.chat_id and doc.chat_id not in seen:
+                seen.add(doc.chat_id)
+                latest_document_title = doc.filename
+                documents_by_chat[doc.chat_id] = DocumentResponse(
+                    fileName=doc.filename,
+                    filePages=doc.pages,
+                    fileUrl=doc.file_url,
+                    previewImageUrl=doc.preview_image_url,
+                    summary=doc.summary,
                 )
-            )
-        messages_by_chat[chat.id] = msg_list
 
-        # Retrieve documents mapped by chat ID
-        db_doc = db.query(models.Document).filter(models.Document.chat_id == chat.id).order_by(models.Document.created_at.desc()).first()
-        if db_doc:
-            latest_document_title = db_doc.filename
-            documents_by_chat[chat.id] = DocumentResponse(
-                fileName=db_doc.filename,
-                filePages=db_doc.pages,
-                fileUrl=db_doc.file_url,
-                previewImageUrl=db_doc.preview_image_url,
-                summary=db_doc.summary
-            )
-
-    # If user has no folders/chats yet, return default mock setup so they aren't blank on first login
+    # 4. Seed default folders + welcome chat for brand-new users
     if not db_folders and not db_chats:
-        # Create default categories/folders for this user to make it feel premium
         default_folders = [
             ("labor", "Labor Law"),
             ("civil", "Civil Law"),
             ("criminal", "Criminal Law"),
-            ("contracts", "Contracts")
+            ("contracts", "Contracts"),
         ]
         for fid, fname in default_folders:
-            folder = models.ChatFolder(id=fid, name=fname, user_id=current_user.id)
-            db.add(folder)
-        
-        # Add a default welcome chat
+            db.add(models.ChatFolder(id=fid, name=fname, user_id=current_user.id))
+
         default_chat_id = "c-welcome"
-        welcome_chat = models.Chat(id=default_chat_id, title="Welcome Conversation", folder_id="contracts", user_id=current_user.id)
-        db.add(welcome_chat)
-        
-        welcome_msg = models.Message(
+        db.add(models.Chat(id=default_chat_id, title="Welcome Conversation", folder_id="contracts", user_id=current_user.id))
+        db.add(models.Message(
             id="m-welcome",
             chat_id=default_chat_id,
             role="assistant",
             content="Welcome to GovDoc Intellisense! Upload a PDF document and ask your legal questions.",
-            created_at=datetime.utcnow()
-        )
-        db.add(welcome_msg)
+            created_at=datetime.utcnow(),
+        ))
         db.commit()
-
-        # Re-fetch once to construct correct response
         return get_workspace(current_user=current_user, db=db)
 
     quick_prompts = [
@@ -223,15 +202,16 @@ def get_workspace(
     ]
     domain_options = ["All", "lao_dong", "dan_su", "hinh_su", "hanh_chinh"]
 
+    # Messages are lazy-loaded per chat by the client via GET /chats/{chat_id}/messages
     return WorkspaceDataResponse(
         workspaceName=f"{current_user.username}'s Workspace",
         documentTitle=latest_document_title,
         folders=folders_response,
         chats=chats_response,
-        messagesByChat=messages_by_chat,
+        messagesByChat={},
         documentsByChat=documents_by_chat,
         quickPrompts=quick_prompts,
-        domainOptions=domain_options
+        domainOptions=domain_options,
     )
 
 
@@ -331,3 +311,44 @@ def delete_chat(
     db.delete(chat)
     db.commit()
     return {"status": "success"}
+
+
+@router.get("/chats/{chat_id}/messages", response_model=list[MessageResponse])
+def get_chat_messages(
+    chat_id: str,
+    current_user: models.User = Depends(auth_service.get_current_user),
+    db: Session = Depends(get_db),
+) -> list[MessageResponse]:
+    """Lazy-load messages for a specific chat (called when user switches to that chat)."""
+    chat = db.query(models.Chat).filter(
+        models.Chat.id == chat_id,
+        models.Chat.user_id == current_user.id,
+    ).first()
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    db_msgs = (
+        db.query(models.Message)
+        .filter(models.Message.chat_id == chat_id)
+        .order_by(models.Message.created_at.asc())
+        .all()
+    )
+
+    result: list[MessageResponse] = []
+    for m in db_msgs:
+        citations_list: list = []
+        if m.citations:
+            try:
+                citations_list = json.loads(m.citations)
+            except Exception:
+                pass
+        result.append(
+            MessageResponse(
+                id=m.id,
+                role=m.role,
+                content=m.content,
+                createdAt=m.created_at.strftime("%H:%M"),
+                citations=citations_list,
+            )
+        )
+    return result

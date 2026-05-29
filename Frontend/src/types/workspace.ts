@@ -2,6 +2,18 @@ export type MessageRole = 'user' | 'assistant'
 export type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 export type ReasoningLevel = 'low' | 'medium' | 'high'
 
+export type UserProfile = {
+  id: number
+  username: string
+  full_name: string | null
+  email: string | null
+  bio: string | null
+  avatar_color: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+
 export type ChatFolder = {
   id: string
   name: string
