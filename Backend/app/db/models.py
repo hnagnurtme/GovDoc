@@ -10,7 +10,12 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
+    avatar_color = Column(String, nullable=True, default="#00685f")
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     folders = relationship("ChatFolder", back_populates="user", cascade="all, delete-orphan")
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")

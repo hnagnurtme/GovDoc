@@ -39,7 +39,9 @@ async def run(state: GraphState) -> GraphState:
 
         # Fallback to Tesseract OCR if text is empty or too short (scanned document)
         if len(raw_text.strip()) < 100:
+            # pyrefly: ignore [missing-import]
             import pytesseract
+            # pyrefly: ignore [missing-import]
             from pdf2image import convert_from_path
 
             # Determine available languages to check if 'vie' is present

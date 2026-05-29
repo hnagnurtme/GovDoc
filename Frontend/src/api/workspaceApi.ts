@@ -190,3 +190,11 @@ export async function deleteChatApi(chatId: string): Promise<void> {
     throw new Error(`Failed to delete chat: ${await response.text()}`)
   }
 }
+
+export async function fetchChatMessages(chatId: string): Promise<Message[]> {
+  const response = await fetch(`${getApiBase()}/chats/${chatId}/messages`, {
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) throw new Error(`Failed to load messages (${response.status})`)
+  return (await response.json()) as Message[]
+}
