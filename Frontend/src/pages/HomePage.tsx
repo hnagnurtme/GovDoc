@@ -23,7 +23,7 @@ export function HomePage() {
     })()
   }, [])
 
-  const goWorkspace = () => navigate('/workspace')
+  const goWorkspace = () => navigate('/dashboard')
 
   const scrollToSection = (section: HomeSectionKey) => {
     const target = section === 'workflow' ? workflowSectionRef.current : featuresSectionRef.current

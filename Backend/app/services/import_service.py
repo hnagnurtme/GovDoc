@@ -11,6 +11,7 @@ async def import_document_to_graph(
     filename: str,
     doc_type: str,
     legal_domain: str | None,
+    client_id: str | None = None,
 ) -> dict:
     suffix = Path(filename).suffix or ".pdf"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -23,6 +24,7 @@ async def import_document_to_graph(
                 "file_path": tmp_path,
                 "doc_type": doc_type,
                 "legal_domain": legal_domain,
+                "client_id": client_id,
             }
         )
     finally:

@@ -1,5 +1,5 @@
 import time
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from app.services.cloudinary_service import (
     validate_upload_payload,
 )
 from app.services.import_service import import_document_to_graph
+from app.utils.ws_manager import ws_manager
 
 router = APIRouter(tags=["cloudinary"])
 
@@ -29,6 +30,7 @@ class CloudinaryUploadResponse(BaseModel):
 async def upload_cloudinary_pdf(
     file: UploadFile = File(...),
     chat_id: str | None = Form(default=None, alias="chatId"),
+    client_id: str | None = Form(default=None, alias="clientId"),
     current_user: models.User = Depends(auth_service.get_current_user),
     db: Session = Depends(get_db)
 ) -> CloudinaryUploadResponse:
@@ -37,6 +39,10 @@ async def upload_cloudinary_pdf(
     content_type = file.content_type or ""
     validate_upload_payload(content_type=content_type, file_bytes=file_bytes)
 
+    # Broadcast upload start
+    if client_id:
+        await ws_manager.send_progress(client_id, "upload", "running")
+
     # Upload PDF and generate preview image using Cloudinary service
     payload = await upload_pdf(
         file_bytes=file_bytes,
@@ -44,12 +50,16 @@ async def upload_cloudinary_pdf(
         content_type=content_type,
     )
 
+    if client_id:
+        await ws_manager.send_progress(client_id, "upload", "completed")
+
     # Run ingestion pipeline and wait for chunking and summary result
     import_result = await import_document_to_graph(
         file_bytes=file_bytes,
         filename=safe_filename,
         doc_type="luat",
-        legal_domain=None
+        legal_domain=None,
+        client_id=client_id,
     )
 
     summary_text = import_result.get("summary")
@@ -77,3 +87,15 @@ async def upload_cloudinary_pdf(
         preview_image_url=payload.get("preview_image_url"),
         summary=summary_text
     )
+
+
+@router.websocket("/ws/progress/{client_id}")
+async def websocket_progress_endpoint(websocket: WebSocket, client_id: str):
+    await ws_manager.connect(client_id, websocket)
+    try:
+        while True:
+            # Keep client connection open
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(client_id)
+

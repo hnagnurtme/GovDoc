@@ -119,11 +119,14 @@ export type UploadedPdf = {
   summary: string | null
 }
 
-export async function uploadPdfToCloudinary(file: File, chatId?: string): Promise<UploadedPdf> {
+export async function uploadPdfToCloudinary(file: File, chatId?: string, clientId?: string): Promise<UploadedPdf> {
   const formData = new FormData()
   formData.append('file', file)
   if (chatId) {
     formData.append('chatId', chatId)
+  }
+  if (clientId) {
+    formData.append('clientId', clientId)
   }
 
   const response = await fetch(`${getApiBase()}/cloudinary/upload`, {
@@ -198,3 +201,49 @@ export async function fetchChatMessages(chatId: string): Promise<Message[]> {
   if (!response.ok) throw new Error(`Failed to load messages (${response.status})`)
   return (await response.json()) as Message[]
 }
+
+import type { StoredDocument } from '@/types/workspace'
+
+export async function fetchDocumentsApi(): Promise<StoredDocument[]> {
+  const response = await fetch(`${getApiBase()}/documents`, {
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to fetch documents (${response.status}): ${await response.text()}`)
+  }
+  return (await response.json()) as StoredDocument[]
+}
+
+export async function deleteDocumentApi(docId: string): Promise<void> {
+  const response = await fetch(`${getApiBase()}/documents/${docId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to delete document (${response.status}): ${await response.text()}`)
+  }
+}
+
+export async function updateChatApi(chatId: string, title?: string, folderId?: string | null): Promise<void> {
+  const response = await fetch(`${getApiBase()}/chats/${chatId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ title, folderId: folderId === null ? "" : folderId }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to update chat (${response.status}): ${await response.text()}`)
+  }
+}
+
+export async function linkDocumentApi(docId: string, chatId?: string | null): Promise<void> {
+  const query = chatId ? `?chat_id=${chatId}` : ''
+  const response = await fetch(`${getApiBase()}/documents/${docId}/link${query}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to link document (${response.status}): ${await response.text()}`)
+  }
+}
+
+

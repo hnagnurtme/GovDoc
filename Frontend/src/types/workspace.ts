@@ -61,3 +61,15 @@ export type WorkspaceData = {
   domainOptions: string[]
   summary?: string
 }
+
+export type StoredDocument = {
+  id: string
+  fileName: string
+  filePages: number | null
+  fileUrl: string
+  previewImageUrl: string | null
+  summary: string | null
+  chatId: string | null
+  createdAt: string
+}
+

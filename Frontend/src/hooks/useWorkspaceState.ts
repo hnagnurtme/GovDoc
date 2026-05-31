@@ -5,8 +5,13 @@ import {
   uploadPdfToCloudinary,
   createChatApi,
   fetchChatMessages,
+  deleteChatApi,
+  fetchDocumentsApi,
+  deleteDocumentApi,
+  updateChatApi,
+  linkDocumentApi,
 } from '@/api/workspaceApi'
-import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus, StoredUploadedPdf } from '@/types/workspace'
+import type { ChatItem, ChatFolder, Message, ReasoningLevel, UploadStatus, StoredUploadedPdf, StoredDocument } from '@/types/workspace'
 import { makeId } from '@/utils/id'
 import { nowLabel } from '@/utils/time'
 
@@ -41,6 +46,20 @@ export function useWorkspaceState() {
   const [fileUrl, setFileUrl] = useState('')
   const [previewImageUrl, setPreviewImageUrl] = useState('')
   const [fileSummary, setFileSummary] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<StoredDocument[]>([])
+  const clientId = useMemo(() => makeId('client'), [])
+  const [lang, setLang] = useState<'vi' | 'en'>('vi')
+  const [pipelineProgress, setPipelineProgress] = useState<Record<string, { status: 'pending' | 'running' | 'completed' | 'error', error?: string }>>({
+    upload: { status: 'pending' },
+    scan: { status: 'pending' },
+    summarize: { status: 'pending' },
+    chunk: { status: 'pending' },
+    embed: { status: 'pending' },
+    store: { status: 'pending' },
+  })
+  const toggleLanguage = useCallback(() => {
+    setLang((prev) => (prev === 'vi' ? 'en' : 'vi'))
+  }, [])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   // Track which chatIds have had messages loaded to avoid duplicate fetches
@@ -64,6 +83,13 @@ export function useWorkspaceState() {
         
         const initialChatId = data.chats[0]?.id ?? ''
         setActiveChatId(initialChatId)
+        
+        try {
+          const docs = await fetchDocumentsApi()
+          setDocuments(docs)
+        } catch (docErr) {
+          console.error('Failed to fetch documents list:', docErr)
+        }
       } catch (err) {
         console.error('Failed to load workspace data from backend:', err)
       } finally {
@@ -71,6 +97,7 @@ export function useWorkspaceState() {
       }
     })()
   }, [])
+
 
   // Sync document panel state when active chat changes
   useEffect(() => {
@@ -244,10 +271,41 @@ export function useWorkspaceState() {
       return
     }
 
+    // Reset progress
+    setPipelineProgress({
+      upload: { status: 'pending' },
+      scan: { status: 'pending' },
+      summarize: { status: 'pending' },
+      chunk: { status: 'pending' },
+      embed: { status: 'pending' },
+      store: { status: 'pending' },
+    })
+
+    const wsBase = (import.meta.env.VITE_BACKEND_API_BASE_URL || 'http://localhost:8000/api/v1')
+      .replace('http://', 'ws://')
+      .replace('https://', 'wss://')
+    const ws = new WebSocket(`${wsBase}/ws/progress/${clientId}`)
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as { step: string; status: 'pending' | 'running' | 'completed' | 'error'; error?: string }
+        setPipelineProgress((prev) => ({
+          ...prev,
+          [data.step]: { status: data.status, error: data.error },
+        }))
+        if (data.status === 'error') {
+          setUploadStatus('error')
+          ws.close()
+        }
+      } catch (err) {
+        console.error('Failed to parse WebSocket progress:', err)
+      }
+    }
+
     try {
       setUploadStatus('uploading')
-      // Pass the activeChatId to link the uploaded document to this chat
-      const result = await uploadPdfToCloudinary(selectedFile, activeChatId)
+      // Pass the activeChatId and clientId to link the uploaded document to this chat
+      const result = await uploadPdfToCloudinary(selectedFile, activeChatId, clientId)
       setUploadStatus('success')
       setFilePages(result.pages)
       setFileUrl(result.secureUrl)
@@ -269,11 +327,119 @@ export function useWorkspaceState() {
         ...prev,
         [activeChatId]: newDoc,
       }))
+
+      // Refetch documents to include the new one in the list
+      try {
+        const docs = await fetchDocumentsApi()
+        setDocuments(docs)
+      } catch (docErr) {
+        console.error('Failed to fetch documents list after upload:', docErr)
+      }
     } catch (error) {
       console.error(error)
       setUploadStatus('error')
+    } finally {
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close()
+        }
+      }, 1000)
     }
-  }, [selectedFile, activeChatId])
+  }, [selectedFile, activeChatId, clientId])
+
+  const deleteChat = useCallback(async (chatId: string) => {
+    try {
+      await deleteChatApi(chatId)
+      setChats((prev) => prev.filter((chat) => chat.id !== chatId))
+      setFolders((prev) =>
+        prev.map((folder) => ({
+          ...folder,
+          chatIds: folder.chatIds.filter((id) => id !== chatId),
+        }))
+      )
+      if (activeChatId === chatId) {
+        const remainingChats = chats.filter((chat) => chat.id !== chatId)
+        if (remainingChats.length > 0) {
+          setActiveChatId(remainingChats[0].id)
+        } else {
+          setActiveChatId('')
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete chat:', err)
+    }
+  }, [activeChatId, chats])
+
+  const renameChat = useCallback(async (chatId: string, newTitle: string) => {
+    try {
+      await updateChatApi(chatId, newTitle)
+      setChats((prev) =>
+        prev.map((chat) => (chat.id === chatId ? { ...chat, title: newTitle } : chat))
+      )
+    } catch (err) {
+      console.error('Failed to rename chat:', err)
+    }
+  }, [])
+
+  const deleteDocument = useCallback(async (docId: string) => {
+    try {
+      await deleteDocumentApi(docId)
+      const docToDelete = documents.find((d) => d.id === docId)
+      setDocuments((prev) => prev.filter((d) => d.id !== docId))
+      
+      setDocumentsByChat((prev) => {
+        const next = { ...prev }
+        for (const cid in next) {
+          if (docToDelete && next[cid]?.fileUrl === docToDelete.fileUrl) {
+            delete next[cid]
+          }
+        }
+        return next
+      })
+    } catch (err) {
+      console.error('Failed to delete document:', err)
+    }
+  }, [documents])
+
+  const attachDocumentToChat = useCallback(async (doc: StoredDocument) => {
+    if (!activeChatId) return
+    try {
+      // Set loading status to simulate linking
+      setUploadStatus('uploading')
+      
+      // Call backend to link document to chat
+      await linkDocumentApi(doc.id, activeChatId)
+      
+      const mappedDoc: StoredUploadedPdf = {
+        fileName: doc.fileName,
+        filePages: doc.filePages,
+        fileUrl: doc.fileUrl,
+        previewImageUrl: doc.previewImageUrl || '',
+        summary: doc.summary,
+      }
+      setDocumentsByChat((prev) => ({
+        ...prev,
+        [activeChatId]: mappedDoc
+      }))
+      
+      // Update locally in documents list which chatId it belongs to
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === doc.id ? { ...d, chatId: activeChatId } : d))
+      )
+      
+      // Set to success
+      setUploadStatus('success')
+      setFileName(doc.fileName)
+      setFilePages(doc.filePages)
+      setFileUrl(doc.fileUrl)
+      setPreviewImageUrl(doc.previewImageUrl || '')
+      setFileSummary(doc.summary)
+      setDocumentTitle(doc.fileName)
+    } catch (err) {
+      console.error('Failed to link document:', err)
+      setUploadStatus('error')
+    }
+  }, [activeChatId])
 
   const onPickFile = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -331,5 +497,15 @@ export function useWorkspaceState() {
     startNewChat,
     isLoading,
     isLoadingMessages,
+    documents,
+    deleteChat,
+    renameChat,
+    deleteDocument,
+    attachDocumentToChat,
+    clientId,
+    lang,
+    toggleLanguage,
+    pipelineProgress,
   }
 }
+

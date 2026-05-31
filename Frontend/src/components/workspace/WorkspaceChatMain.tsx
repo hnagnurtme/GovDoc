@@ -2,6 +2,7 @@ import { useState, type KeyboardEvent, type MutableRefObject } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Message, ReasoningLevel } from '@/types/workspace'
+import { translations } from '@/utils/translations'
 import styles from '@/components/workspace/Workspace.module.css'
 
 type ParsedSections = {
@@ -127,6 +128,7 @@ type WorkspaceChatMainProps = {
   onChangeReasoning: (value: ReasoningLevel) => void
   onSendMessage: () => void
   fileSummary: string | null
+  lang: 'vi' | 'en'
 }
 
 export function WorkspaceChatMain({
@@ -145,8 +147,11 @@ export function WorkspaceChatMain({
   onChangeReasoning,
   onSendMessage,
   fileSummary,
+  lang,
 }: WorkspaceChatMainProps) {
   const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(false)
+  const t = translations[lang]
+
   return (
     <main className={styles.chatMain}>
       <header className={styles.chatHeader}>
@@ -155,7 +160,7 @@ export function WorkspaceChatMain({
             <div className={styles.summaryTitle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span className="material-symbols-outlined">description</span>
-                <strong>Document Summary</strong>
+                <strong>{t.docSummary}</strong>
               </div>
               <button
                 type="button"
@@ -200,39 +205,60 @@ export function WorkspaceChatMain({
                 ) : (
                   <div className={styles.legalSections}>
                     {parsed.summary && (
-                      <section className={styles.legalSection}>
-                        <h4>Tóm tắt</h4>
-                        <MarkdownBlock content={parsed.summary} compact />
+                      <section className={`${styles.legalSection} ${styles.sectionSummary}`}>
+                        <div className={styles.sectionHeader}>
+                          <span className="material-symbols-outlined">menu_book</span>
+                          <h4>{lang === 'vi' ? 'Tóm tắt phân tích' : 'Summary Analysis'}</h4>
+                        </div>
+                        <div className={styles.sectionContent}>
+                          <MarkdownBlock content={parsed.summary} compact />
+                        </div>
                       </section>
                     )}
                     {basisLines.length > 0 && (
-                      <section className={styles.legalSection}>
-                        <h4>Căn cứ</h4>
-                        <ul>
-                          {basisLines.map((line) => (
-                            <li key={line}>
-                              <MarkdownBlock content={line} compact />
-                            </li>
-                          ))}
-                        </ul>
+                      <section className={`${styles.legalSection} ${styles.sectionBasis}`}>
+                        <div className={styles.sectionHeader}>
+                          <span className="material-symbols-outlined">gavel</span>
+                          <h4>{lang === 'vi' ? 'Căn cứ pháp lý' : 'Legal Basis'}</h4>
+                        </div>
+                        <div className={styles.sectionContent}>
+                          <ul>
+                            {basisLines.map((line, idx) => (
+                              <li key={idx}>
+                                <MarkdownBlock content={line} compact />
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </section>
                     )}
                     {parsed.note && (
-                      <section className={styles.legalSection}>
-                        <h4>Lưu ý</h4>
-                        <MarkdownBlock content={parsed.note} compact />
+                      <section className={`${styles.legalSection} ${styles.sectionNote}`}>
+                        <div className={styles.sectionHeader}>
+                          <span className="material-symbols-outlined">info</span>
+                          <h4>{lang === 'vi' ? 'Lưu ý & Khuyến nghị' : 'Notes & Recommendations'}</h4>
+                        </div>
+                        <div className={styles.sectionContent}>
+                          <MarkdownBlock content={parsed.note} compact />
+                        </div>
                       </section>
                     )}
                     {parsed.footer && <small className={styles.legalFooter}>{parsed.footer}</small>}
                   </div>
                 )}
                 {message.citations && message.citations.length > 0 && (
-                  <div className={styles.citations}>
-                    {message.citations.map((citation, idx) => (
-                      <span key={`${citation.article_ref}-${idx}`} className={styles.citationBadge} title={citation.content || ''}>
-                        {citation.article_ref || 'Ref'} - {citation.doc_title || 'Document'}
-                      </span>
-                    ))}
+                  <div className={styles.citationsContainer}>
+                    <p className={styles.citationsTitle}>
+                      <span className="material-symbols-outlined">description</span> {t.referDocs}
+                    </p>
+                    <div className={styles.citations}>
+                      {message.citations.map((citation, idx) => (
+                        <span key={`${citation.article_ref}-${idx}`} className={styles.citationBadge} title={citation.content || ''}>
+                          <span className="material-symbols-outlined">article</span>
+                          {citation.article_ref || t.ref} - {citation.doc_title || t.doc}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {message.createdAt && <small className={styles.msgMeta}>{message.createdAt}</small>}
@@ -247,7 +273,7 @@ export function WorkspaceChatMain({
             </div>
             <div className={`${styles.msgBody} ${styles.loadingMsgBody}`}>
               <span className={styles.loadingSpinner} aria-hidden="true" />
-              <span className={styles.loadingText}>Đang tạo phản hồi...</span>
+              <span className={styles.loadingText}>{t.loadingReply}</span>
             </div>
           </article>
         )}
@@ -271,7 +297,7 @@ export function WorkspaceChatMain({
             value={composerText}
             onChange={(event) => onComposerChange(event.target.value)}
             onKeyDown={onComposerKeyDown}
-            placeholder="Ask about compliance, statutes, or risk factors..."
+            placeholder={t.askPlaceholder}
           />
           <button type="button" className={styles.iconBtn} aria-label="Attach file">
             <span className="material-symbols-outlined">attach_file</span>

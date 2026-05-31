@@ -10,6 +10,7 @@ class GraphState(TypedDict, total=False):
     legal_domain: Optional[str]
     top_k: Optional[int]
     is_active_only: Optional[bool]
+    client_id: Optional[str]
 
     raw_text: Optional[str]
     summary: Optional[str]

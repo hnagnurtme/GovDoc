@@ -47,6 +47,15 @@ class ChatCreate(BaseModel):
         populate_by_name = True
 
 
+class ChatUpdate(BaseModel):
+    title: str | None = Field(default=None)
+    folder_id: str | None = Field(default=None, alias="folderId")
+
+    class Config:
+        populate_by_name = True
+
+
+
 class ChatResponse(BaseModel):
     id: str
     title: str
@@ -311,6 +320,45 @@ def delete_chat(
     db.delete(chat)
     db.commit()
     return {"status": "success"}
+
+
+@router.patch("/chats/{chat_id}", response_model=ChatResponse)
+def update_chat(
+    chat_id: str,
+    payload: ChatUpdate,
+    current_user: models.User = Depends(auth_service.get_current_user),
+    db: Session = Depends(get_db)
+) -> ChatResponse:
+    chat = db.query(models.Chat).filter(
+        models.Chat.id == chat_id,
+        models.Chat.user_id == current_user.id
+    ).first()
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    if payload.title is not None:
+        chat.title = payload.title
+    if payload.folder_id is not None:
+        if payload.folder_id != "":
+            folder = db.query(models.ChatFolder).filter(
+                models.ChatFolder.id == payload.folder_id,
+                models.ChatFolder.user_id == current_user.id
+            ).first()
+            if not folder:
+                raise HTTPException(status_code=400, detail="Invalid folder_id")
+            chat.folder_id = payload.folder_id
+        else:
+            chat.folder_id = None
+
+    db.commit()
+    db.refresh(chat)
+    return ChatResponse(
+        id=chat.id,
+        title=chat.title,
+        updatedAt=chat.updated_at.strftime("%H:%M"),
+        folderId=chat.folder_id
+    )
+
 
 
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageResponse])
