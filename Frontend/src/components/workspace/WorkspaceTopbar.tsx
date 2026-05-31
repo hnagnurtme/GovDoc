@@ -1,22 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchUserProfile } from '@/api/auth'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { fetchUserProfile, logout } from '@/api/auth'
 import { AvatarButton, UserProfilePopup } from '@/components/workspace/UserProfilePopup'
 import type { UserProfile } from '@/types/workspace'
+import { translations } from '@/utils/translations'
 import styles from '@/components/workspace/Workspace.module.css'
 
 type WorkspaceTopbarProps = {
   onGoHome: () => void
   isSidebarHidden: boolean
   onToggleSidebar: () => void
+  lang: 'vi' | 'en'
+  onToggleLanguage: () => void
 }
 
-export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: WorkspaceTopbarProps) {
+export function WorkspaceTopbar({
+  onGoHome,
+  isSidebarHidden,
+  onToggleSidebar,
+  lang,
+  onToggleLanguage,
+}: WorkspaceTopbarProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const activePath = location.pathname
+  const t = translations[lang]
+
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  // Ref gắn vào wrapper span để popup dùng cho outside-click detection
   const avatarWrapRef = useRef<HTMLSpanElement | null>(null)
 
-  // Fetch profile ngay khi Topbar mount để avatar hiển thị đúng màu/initials
   useEffect(() => {
     fetchUserProfile().then(setProfile).catch(console.error)
   }, [])
@@ -39,13 +52,49 @@ export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: 
           GovDoc Intellisense
         </button>
         <nav className={styles.topNav} aria-label="Workspace navigation">
-          <span className={styles.topNavActive}>Workspace</span>
-          <span>Libraries</span>
-          <span>Analytics</span>
+          <span
+            className={activePath === '/dashboard' ? styles.topNavActive : ''}
+            onClick={() => navigate('/dashboard')}
+            style={{ cursor: 'pointer' }}
+          >
+            {t.overview}
+          </span>
+          <span
+            className={activePath === '/workspace' ? styles.topNavActive : ''}
+            onClick={() => navigate('/workspace')}
+            style={{ cursor: 'pointer' }}
+          >
+            {t.workspace}
+          </span>
+          <span
+            className={activePath === '/libraries' ? styles.topNavActive : ''}
+            onClick={() => navigate('/libraries')}
+            style={{ cursor: 'pointer' }}
+          >
+            {t.libraries}
+          </span>
+          <span
+            className={activePath === '/analytics' ? styles.topNavActive : ''}
+            onClick={() => navigate('/analytics')}
+            style={{ cursor: 'pointer' }}
+          >
+            {t.analytics}
+          </span>
         </nav>
       </div>
 
       <div className={styles.topbarRight}>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          style={{ display: 'flex', width: 'auto', gap: '0.25rem', padding: '0 0.5rem', fontWeight: 'bold' }}
+          onClick={onToggleLanguage}
+          title={lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>language</span>
+          <span style={{ fontSize: '0.8rem' }}>{lang.toUpperCase()}</span>
+        </button>
+
         <button type="button" className={styles.iconBtn} aria-label="History">
           <span className="material-symbols-outlined">history</span>
         </button>
@@ -62,16 +111,13 @@ export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: 
           title="Sign Out"
           style={{ marginRight: '4px' }}
           onClick={() => {
-            import('@/api/auth').then((auth) => {
-              auth.logout()
-              window.location.reload()
-            })
+            logout()
+            window.location.reload()
           }}
         >
           <span className="material-symbols-outlined">logout</span>
         </button>
 
-        {/* Wrapper span giữ ref cho outside-click, AvatarButton nhận profile đã fetch */}
         <span ref={avatarWrapRef} style={{ display: 'inline-flex' }}>
           <AvatarButton
             profile={profile}
@@ -90,3 +136,4 @@ export function WorkspaceTopbar({ onGoHome, isSidebarHidden, onToggleSidebar }: 
     </header>
   )
 }
+

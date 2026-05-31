@@ -27,7 +27,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await registerApi(username, password)
-      navigate('/workspace')
+      navigate('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Registration failed')
     } finally {

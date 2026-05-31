@@ -58,6 +58,8 @@ export function WorkspacePage() {
         onGoHome={() => navigate('/')}
         isSidebarHidden={isSidebarHidden}
         onToggleSidebar={() => setIsSidebarHidden((prev) => !prev)}
+        lang={state.lang}
+        onToggleLanguage={state.toggleLanguage}
       />
 
       <div className={styles.layout} style={layoutStyle}>
@@ -80,6 +82,12 @@ export function WorkspacePage() {
           filePages={state.filePages}
           fileUrl={state.fileUrl}
           isHidden={isSidebarHidden}
+          documents={state.documents}
+          onDeleteChat={state.deleteChat}
+          onRenameChat={state.renameChat}
+          onDeleteDocument={state.deleteDocument}
+          onAttachDocument={state.attachDocumentToChat}
+          lang={state.lang}
         />
 
         <WorkspaceChatMain
@@ -98,6 +106,7 @@ export function WorkspacePage() {
           onChangeReasoning={state.setReasoningLevel}
           onSendMessage={() => void state.sendMessage()}
           fileSummary={state.fileSummary}
+          lang={state.lang}
         />
 
         <div className={styles.previewResizeHandle} onMouseDown={startResizePreview} role="separator" aria-orientation="vertical" aria-label="Resize preview panel" />
@@ -109,6 +118,9 @@ export function WorkspacePage() {
           fileUrl={state.fileUrl}
           previewImageUrl={state.previewImageUrl}
           uploadTimeText={uploadTimeText}
+          uploadStatus={state.uploadStatus}
+          pipelineProgress={state.pipelineProgress}
+          lang={state.lang}
         />
       </div>
     </div>
