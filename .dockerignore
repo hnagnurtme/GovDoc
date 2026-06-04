@@ -1,15 +1,50 @@
+# Git & IDEs
 .git
 .gitignore
-.vscode
-.venv
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node (Frontend)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+Frontend/.env
+Frontend/.env.*
+!Frontend/.env.example
+*.tsbuildinfo
+
+# Python (Backend)
+.venv/
+venv/
+env/
 **/__pycache__/
-**/*.pyc
+**/*.py[cod]
 **/*.pyo
 **/*.pyd
 **/.pytest_cache/
 **/.mypy_cache/
 **/.ruff_cache/
-**/.DS_Store
+Backend/.env
+Backend/.env.*
+!Backend/.env.example
 Backend/tests/
 Backend/data/
 Data/
+govdoc.db
+
+# Logs & build temp
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+build/
+tmp/
+temp/
