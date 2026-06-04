@@ -1,22 +1,59 @@
-FROM python:3.11-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# Stage 1: Build stage
+FROM python:3.11-slim AS builder
 
 WORKDIR /workspace
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+# Install minimal build tools if any C dependencies exist
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# Set up virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 COPY Backend/requirements.runtime.txt /workspace/Backend/requirements.runtime.txt
 
-RUN pip install --no-cache-dir -r /workspace/Backend/requirements.runtime.txt
+# Install dependencies using build mounts for pip cache
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install -r /workspace/Backend/requirements.runtime.txt
 
-COPY Backend /workspace/Backend
+# Stage 2: Runtime stage
+FROM python:3.11-slim AS runner
+
+# Create a non-root user and group
+RUN groupadd -r app && useradd -r -g app -d /workspace appuser
+
+# Install runtime dependencies (like curl for healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Copy the python virtual environment from the builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set runtime environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1
+
+# Copy application source code and set ownership to non-root user
+COPY --chown=appuser:app Backend /workspace/Backend
+
+# Switch to the non-root user
+USER appuser
 
 WORKDIR /workspace/Backend
 
 EXPOSE 8000
 
+# Set healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
