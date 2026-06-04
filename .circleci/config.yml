@@ -2,120 +2,134 @@ version: 2.1
 
 jobs:
   build_backend_container_image:
-    docker:
-      - image: cimg/base:stable
+    machine:
+      image: ubuntu-2204:current
     steps:
       - checkout
-      - setup_remote_docker:
-          version: default
-
       - run:
           name: Phase 1 - Resolve backend image metadata
           command: |
             set -eu
-
             SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
-            BACKEND_IMAGE="${DOCKERHUB_BACKEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-backend}"
-
+            REGISTRY="ghcr.io"
+            OWNER="${CIRCLE_PROJECT_USERNAME:-hnagnurtme}"
+            OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+            
+            BACKEND_IMAGE="${REGISTRY}/${OWNER_LOWER}/govdoc-backend"
+            
             if [ -n "${CIRCLE_TAG:-}" ]; then
               IMAGE_TAGS="$CIRCLE_TAG"
             else
               IMAGE_TAGS="latest $SHORT_SHA"
             fi
-
+            
             echo "export BACKEND_IMAGE=$BACKEND_IMAGE" >> "$BASH_ENV"
             echo "export IMAGE_TAGS='$IMAGE_TAGS'" >> "$BASH_ENV"
-
+            
             echo "Resolved BACKEND_IMAGE=$BACKEND_IMAGE"
             echo "Resolved IMAGE_TAGS=$IMAGE_TAGS"
 
       - run:
-          name: Phase 2 - Docker Hub login
+          name: Phase 2 - GitHub Packages (GHCR) login
           command: |
             set -eu
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            GH_USER="${GITHUB_USERNAME:-$CIRCLE_PROJECT_USERNAME}"
+            GH_TOKEN="${GITHUB_TOKEN:-$GHCR_PAT}"
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "Error: GITHUB_TOKEN or GHCR_PAT environment variable is not set in CircleCI."
+              exit 1
+            fi
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 
       - run:
-          name: Phase 3 - Build backend image
+          name: Phase 3 - Set up Docker Buildx
+          command: |
+            set -eu
+            docker buildx create --use --name multi-platform-builder
+            docker buildx inspect --bootstrap
+
+      - run:
+          name: Phase 4 - Build & Push multi-platform backend image
           command: |
             set -eu
             . "$BASH_ENV"
-
+            
             BUILD_TAG_ARGS=""
             for tag in $IMAGE_TAGS; do
               BUILD_TAG_ARGS="$BUILD_TAG_ARGS -t $BACKEND_IMAGE:$tag"
             done
-
+            
             # shellcheck disable=SC2086
-            docker build -f Devops/Dockerfile.backend $BUILD_TAG_ARGS .
-
-      - run:
-          name: Phase 4 - Push backend image tags
-          command: |
-            set -eu
-            . "$BASH_ENV"
-
-            for tag in $IMAGE_TAGS; do
-              docker push "$BACKEND_IMAGE:$tag"
-            done
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              -f Devops/Dockerfile.backend \
+              $BUILD_TAG_ARGS \
+              --push .
 
   build_frontend_container_image:
-    docker:
-      - image: cimg/base:stable
+    machine:
+      image: ubuntu-2204:current
     steps:
       - checkout
-      - setup_remote_docker:
-          version: default
-
       - run:
           name: Phase 1 - Resolve frontend image metadata
           command: |
             set -eu
-
             SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
-            FRONTEND_IMAGE="${DOCKERHUB_FRONTEND_IMAGE:-$DOCKERHUB_USERNAME/govdoc-frontend}"
-
+            REGISTRY="ghcr.io"
+            OWNER="${CIRCLE_PROJECT_USERNAME:-hnagnurtme}"
+            OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+            
+            FRONTEND_IMAGE="${REGISTRY}/${OWNER_LOWER}/govdoc-frontend"
+            
             if [ -n "${CIRCLE_TAG:-}" ]; then
               IMAGE_TAGS="$CIRCLE_TAG"
             else
               IMAGE_TAGS="latest $SHORT_SHA"
             fi
-
+            
             echo "export FRONTEND_IMAGE=$FRONTEND_IMAGE" >> "$BASH_ENV"
             echo "export IMAGE_TAGS='$IMAGE_TAGS'" >> "$BASH_ENV"
-
+            
             echo "Resolved FRONTEND_IMAGE=$FRONTEND_IMAGE"
             echo "Resolved IMAGE_TAGS=$IMAGE_TAGS"
 
       - run:
-          name: Phase 2 - Docker Hub login
+          name: Phase 2 - GitHub Packages (GHCR) login
           command: |
             set -eu
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            GH_USER="${GITHUB_USERNAME:-$CIRCLE_PROJECT_USERNAME}"
+            GH_TOKEN="${GITHUB_TOKEN:-$GHCR_PAT}"
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "Error: GITHUB_TOKEN or GHCR_PAT environment variable is not set in CircleCI."
+              exit 1
+            fi
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 
       - run:
-          name: Phase 3 - Build frontend image
+          name: Phase 3 - Set up Docker Buildx
+          command: |
+            set -eu
+            docker buildx create --use --name multi-platform-builder
+            docker buildx inspect --bootstrap
+
+      - run:
+          name: Phase 4 - Build & Push multi-platform frontend image
           command: |
             set -eu
             . "$BASH_ENV"
-
+            
             BUILD_TAG_ARGS=""
             for tag in $IMAGE_TAGS; do
               BUILD_TAG_ARGS="$BUILD_TAG_ARGS -t $FRONTEND_IMAGE:$tag"
             done
-
+            
             # shellcheck disable=SC2086
-            docker build -f Devops/Dockerfile.frontend $BUILD_TAG_ARGS .
-
-      - run:
-          name: Phase 4 - Push frontend image tags
-          command: |
-            set -eu
-            . "$BASH_ENV"
-
-            for tag in $IMAGE_TAGS; do
-              docker push "$FRONTEND_IMAGE:$tag"
-            done
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              -f Devops/Dockerfile.frontend \
+              $BUILD_TAG_ARGS \
+              --push .
 
   deploy_release_via_ssh:
     docker:
